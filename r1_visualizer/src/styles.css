@@ -1,0 +1,93 @@
+/* Scoped under .r1-app so styles don't leak into the host WordPress theme.
+   Visual language mirrors the printed STB Form R-1 (forms/R1-7-31-2026.pdf):
+   Arial, black hairline grid on white, bordered page frame, no chrome. */
+.r1-app {
+  --r1-line: #000;
+  --r1-muted: #555;
+  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+  color: #000;
+  font-size: 13px;
+  line-height: 1.35;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+}
+.r1-app *, .r1-app *::before, .r1-app *::after { box-sizing: inherit; }
+
+/* Picker (viewer chrome, kept deliberately plain) */
+.r1-picker { position: sticky; top: 0; z-index: 20; display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end; flex: 0 0 auto; padding: 0.6rem 0.9rem; background: #f2f2f2; border: 1px solid var(--r1-line); margin-bottom: 0; }
+.r1-picker label { display: flex; flex-direction: column; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--r1-muted); gap: 0.25rem; }
+.r1-picker select { font-size: 0.9rem; padding: 0.3rem 0.45rem; border: 1px solid var(--r1-line); border-radius: 0; background: #fff; min-width: 6rem; font-family: inherit; }
+.r1-picker-empty { color: var(--r1-muted); }
+
+/* Envelope header — styled after the form's cover page */
+.r1-envelope { text-align: center; margin-bottom: 1rem; }
+.r1-envelope h1 { font-size: 1.25rem; margin: 0.15rem 0; text-transform: uppercase; letter-spacing: 0.02em; }
+.r1-envelope-kicker { margin: 0; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.12em; }
+
+/* Layout: nav + main */
+.r1-body { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 1.25rem; align-items: stretch; flex: 1 1 auto; min-height: 0; max-height: 100%; overflow: hidden; padding-top: 1rem; }
+@media (max-width: 800px) { .r1-body { grid-template-columns: 1fr; overflow-y: auto; } }
+
+/* Nav and schedule panes scroll independently below the sticky picker. */
+.r1-nav { min-height: 0; overflow-y: auto; border: 1px solid var(--r1-line); background: #fff; }
+.r1-nav ul { list-style: none; margin: 0; padding: 0; }
+.r1-nav-item { display: flex; gap: 0.5rem; align-items: baseline; width: 100%; text-align: left; border: 0; background: none; padding: 0.35rem 0.6rem; cursor: pointer; border-bottom: 1px solid #ddd; font-size: 0.8rem; font-family: inherit; color: #000; }
+.r1-nav-item:hover { background: #eee; }
+.r1-nav-item.is-active { background: #000; color: #fff; }
+.r1-nav-id { font-weight: 700; min-width: 3.6rem; font-variant-numeric: tabular-nums; }
+.r1-nav-name { color: inherit; opacity: 0.9; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.r1-nav-item.has-data .r1-nav-id::after { content: '●'; color: #2a7d2a; font-size: 0.6em; vertical-align: middle; margin-left: 0.25rem; }
+.r1-nav-item.is-active.has-data .r1-nav-id::after { color: #9be79b; }
+
+/* Form facsimile: the template grid rendered near-pixel from the xlsx. */
+.r1-fac-wrap { overflow-x: auto; background: #fff; padding: 10px; border: 1px solid #999; }
+.r1-fac { border-collapse: collapse; table-layout: fixed; font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; font-size: 10.5px; line-height: 1.18; color: #000; }
+.r1-fac + .r1-fac { margin-top: 12px; }
+.r1-fac td { padding: 0 3px; vertical-align: top; overflow: hidden; }
+
+/* Form page frame: heavy outer rule, header strip, centered title, footer */
+.r1-main { min-width: 0; min-height: 0; overflow: auto; }
+.r1-page { background: #fff; border: 2px solid var(--r1-line); }
+.r1-page-head { display: flex; justify-content: space-between; border-bottom: 2px solid var(--r1-line); font-weight: 700; padding: 0.2rem 0.7rem; gap: 1rem; }
+.r1-page-head b { font-weight: 700; }
+.r1-page-title { text-align: center; padding: 0.55rem 0.9rem 0.1rem; }
+.r1-page-title h2 { font-size: 0.95rem; margin: 0; text-transform: uppercase; }
+.r1-page-units { margin: 0.1rem 0 0; font-size: 0.85rem; }
+.r1-page-body { padding: 0.6rem 0.9rem 0.9rem; }
+.r1-page-foot { border-top: 2px solid var(--r1-line); text-align: right; font-weight: 700; padding: 0.2rem 0.7rem; }
+.r1-rev-note { font-size: 0.78rem; color: var(--r1-muted); font-style: italic; margin: 0.6rem 0 0; }
+
+/* Tables: full black grid, white ground, no striping — as printed */
+.r1-table-wrap { overflow-x: auto; }
+.r1-table { border-collapse: collapse; width: 100%; font-size: 0.8rem; }
+.r1-table th, .r1-table td { border: 1px solid var(--r1-line); padding: 0.18rem 0.45rem; }
+.r1-table thead th { font-weight: 400; text-align: center; vertical-align: bottom; background: #fff; }
+.r1-letter-row th { font-weight: 400; padding-top: 0; padding-bottom: 0.1rem; }
+.r1-th-line { width: 2.6rem; }
+.r1-th-cross { width: 3.2rem; }
+.r1-td-line { text-align: center; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.r1-td-account { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.r1-table tbody td { vertical-align: top; }
+.r1-td-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.r1-td-lead { font-weight: 400; }
+.r1-td-text { color: #000; }
+.r1-row-total td { font-weight: 700; text-transform: uppercase; }
+.r1-section-row td { text-align: center; font-weight: 700; padding: 0.3rem 0.45rem; }
+
+/* Answers (schedules B / C) — numbered inquiries with answer blanks */
+.r1-answers { margin: 0; }
+.r1-answer-row { display: grid; grid-template-columns: 2.2rem 1fr; gap: 0.5rem; padding: 0.35rem 0; }
+.r1-answer-q { font-weight: 400; text-align: right; }
+.r1-answer-a { margin: 0; }
+.r1-answer-blank { border-bottom: 1px solid var(--r1-line); padding: 0 0.2rem 0.05rem; }
+.r1-answer-list { margin: 0; padding-left: 1.1rem; }
+.r1-na { color: var(--r1-muted); }
+
+/* Misc */
+.r1-json { background: #fff; border: 1px solid var(--r1-line); padding: 0.75rem; overflow: auto; font-size: 0.78rem; }
+.r1-error { background: #fdecea; border: 1px solid #842029; color: #842029; padding: 0.6rem 0.8rem; margin-bottom: 1rem; }
+.r1-loading { color: var(--r1-muted); padding: 1rem 0; }
+.r1-empty { color: var(--r1-muted); font-style: italic; }

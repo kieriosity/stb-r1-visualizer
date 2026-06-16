@@ -1,0 +1,588 @@
+{
+ "200": {
+  "name": "Comparative Statement of Financial Position",
+  "valueKey": "values",
+  "columns": [
+   "close_of_year",
+   "beginning_of_year"
+  ],
+  "footnoteCols": [
+   "close_of_year_footnote_refs",
+   "beginning_of_year_footnote_refs"
+  ]
+ },
+ "210": {
+  "name": "Results of Operations",
+  "valueKey": "values",
+  "columns": [
+   "amount_for_current_year",
+   "preceding_year_amount",
+   "freight_related_revenue_expenses",
+   "passenger_revenue_expense"
+  ],
+  "footnoteCols": [
+   "amount_for_current_year_footnote_refs",
+   "preceding_year_amount_footnote_refs",
+   "freight_related_revenue_expenses_footnote_refs",
+   "passenger_revenue_expense_footnote_refs"
+  ]
+ },
+ "210A": {
+  "name": "Consolidated Statement of Comprehensive Income",
+  "valueKey": "values",
+  "columns": [
+   "amount_for_current_year",
+   "amount_for_preceding_year"
+  ],
+  "footnoteCols": [
+   "amount_for_current_year_footnote_refs",
+   "amount_for_preceding_year_footnote_refs"
+  ]
+ },
+ "220": {
+  "name": "Retained Earnings - Unappropriated",
+  "valueKey": "values",
+  "columns": [
+   "retained_earnings_unappropriated",
+   "equity_in_undistrib_earnings_of"
+  ],
+  "footnoteCols": [
+   "retained_earnings_unappropriated_footnote_refs",
+   "equity_in_undistrib_earnings_of_footnote_refs"
+  ]
+ },
+ "230": {
+  "name": "Capital Stock"
+ },
+ "240": {
+  "name": "Statement of Cash Flows",
+  "valueKey": "values",
+  "columns": [
+   "current_year",
+   "previous_year"
+  ],
+  "footnoteCols": [
+   "current_year_footnote_refs",
+   "previous_year_footnote_refs"
+  ]
+ },
+ "245": {
+  "name": "Working Capital Information",
+  "valueKey": "values",
+  "columns": [
+   "amount"
+  ],
+  "footnoteCols": [
+   "amount_footnote_refs"
+  ]
+ },
+ "310": {
+  "name": "Investments and Advances - Affiliated Companies",
+  "valueKey": "fields",
+  "columns": [
+   "account_no",
+   "class_no",
+   "kind_of_industry",
+   "issuer_name_and_lien_reference",
+   "extent_of_control",
+   "opening_balance",
+   "additions",
+   "deductions",
+   "closing_balance",
+   "disposed_profit_loss",
+   "adjustments_account_721_5",
+   "dividends_or_interest_credited_to_income"
+  ]
+ },
+ "310A": {
+  "name": "Investments in Common Stock of Affiliated Companies",
+  "valueKey": "fields",
+  "columns": [
+   "enter_in_column_the_amortization_for_the",
+   "balance_at_beginning_of_year",
+   "adjust_for_invest_equity_method",
+   "equity_in_un_distributed_earnings_during",
+   "amortization_during_year",
+   "adjust_for_invest_dis_posed_of_or",
+   "balance_at_close_of_year"
+  ]
+ },
+ "330": {
+  "name": "Road Property and Equipment and Improvements to Leased Property and Equipment",
+  "valueKey": "cells",
+  "columns": [
+   "balance_at_beginning_of_year",
+   "expend_during_the_year_for_original_road",
+   "expend_during_the_year_for_purch_of",
+   "expend_for_additions_during_the_year",
+   "credits_for_prop_retired_during_the_year",
+   "net_changes_during_the_year",
+   "balance_at_close_of_year"
+  ]
+ },
+ "332": {
+  "name": "Depreciation Base and Rates - Road and Equipment Owned and Used and Leased from Others",
+  "valueKey": "cells",
+  "columns": [
+   "owned_and_used.depreciation_base_beginning_of_year",
+   "owned_and_used.depreciation_base_close_of_year",
+   "owned_and_used.annual_composite_rate",
+   "leased_from_others.depreciation_base_beginning_of_year",
+   "leased_from_others.depreciation_base_close_of_year",
+   "leased_from_others.annual_composite_rate"
+  ]
+ },
+ "335": {
+  "name": "Accumulated Depreciation - Road and Equipment Owned and Used",
+  "valueKey": "cells",
+  "columns": [
+   "balance_at_beginning_of_year",
+   "credits_to_reserve_during_the_year",
+   "other_credits",
+   "debits_to_reserve_during_the_year",
+   "other_debits",
+   "balance_at_close_of_year"
+  ]
+ },
+ "339": {
+  "name": "Accrued Liability - Leased Property"
+ },
+ "340": {
+  "name": "Depreciation Base and Rates - Improvements to Road and Equipment Leased from Others"
+ },
+ "342": {
+  "name": "Accumulated Depreciation - Improvements to Road and Equipment Leased from Others",
+  "valueKey": "cells",
+  "columns": [
+   "balance_at_beginning_of_year",
+   "credits_to_reserve_during_the_year",
+   "other_credits",
+   "debits_to_reserve_during_the_year",
+   "other_debits",
+   "balance_at_close_of_year"
+  ]
+ },
+ "350": {
+  "name": "Depreciation Base and Rates - Road and Equipment Leased to Others"
+ },
+ "351": {
+  "name": "Accumulated Depreciation - Road and Equipment Leased to Others"
+ },
+ "352A": {
+  "name": "Investment in Railroad Property Used in Transportation Service (By Company)",
+  "valueKey": "fields",
+  "columns": [
+   "in_column_show_the_amount_of_depr_and",
+   "name_of_company",
+   "miles_of_road_used",
+   "investments_in_property",
+   "depr_amortization_of_defense_projects"
+  ]
+ },
+ "352B": {
+  "name": "Investment in Railroad Property Used in Transportation Service (By Property Account)",
+  "valueKey": "cells",
+  "columns": [
+   "respondent",
+   "lessor_railroads",
+   "inactive",
+   "other_leased_properties"
+  ]
+ },
+ "410": {
+  "name": "Railway Operating Expenses",
+  "valueKey": "cells",
+  "columns": [
+   "salaries_wages",
+   "material_tools_supplies_fuels_lubricants",
+   "purchased_services",
+   "general",
+   "total_freight_expense",
+   "passenger",
+   "total"
+  ]
+ },
+ "412": {
+  "name": "Way and Structures",
+  "valueKey": "cells",
+  "columns": [
+   "depreciation",
+   "lease_rentals",
+   "amortization_adjustment_during_year"
+  ]
+ },
+ "414": {
+  "name": "Rents for Interchanged Freight Train Cars and Other Freight Carrying Equipment",
+  "valueKey": "cells",
+  "columns": [
+   "gross_amounts_receivable_per_diem_basis.private_line_cars_b",
+   "gross_amounts_receivable_per_diem_basis.mileage_c",
+   "gross_amounts_receivable_per_diem_basis.time_d",
+   "gross_amounts_payable_per_diem_basis.private_line_cars_e",
+   "gross_amounts_payable_per_diem_basis.mileage_f",
+   "gross_amounts_payable_per_diem_basis.time_g"
+  ]
+ },
+ "415": {
+  "name": "Supporting Schedule - Equipment",
+  "valueKey": "cells",
+  "columns": [
+   "expenses.repairs",
+   "expenses.depreciation_owned",
+   "expenses.depreciation_capitalized_lease",
+   "expenses.amortization_adjustment_net_during_year",
+   "expenses.lease_rentals",
+   "investment_base_as_of_12_31.owned",
+   "investment_base_as_of_12_31.capitalized_lease",
+   "accumulated_depreciation_as_of_12_31.owned",
+   "accumulated_depreciation_as_of_12_31.capitalized_lease"
+  ]
+ },
+ "416": {
+  "name": "Supporting Schedule - Road"
+ },
+ "417": {
+  "name": "Specialized Service Subschedule - Transportation",
+  "valueKey": "cells",
+  "columns": [
+   "tofc_cofc_terminal",
+   "floating_equipment",
+   "coal_marine_terminal",
+   "ore_marine_terminal",
+   "other_marine_terminal",
+   "motor_vehicle_load_distribution",
+   "protective_services_refrigerator_car",
+   "other_special_services",
+   "total_columns"
+  ]
+ },
+ "450": {
+  "name": "Analysis of Taxes",
+  "valueKey": "values",
+  "columns": [
+   "amount",
+   "beginning_of_year_balance",
+   "net_credits_for_current_year",
+   "adjustments",
+   "end_of_year_balance"
+  ],
+  "footnoteCols": [
+   "amount_footnote_refs",
+   "beginning_of_year_balance_footnote_refs",
+   "net_credits_for_current_year_footnote_refs",
+   "adjustments_footnote_refs",
+   "end_of_year_balance_footnote_refs"
+  ]
+ },
+ "460": {
+  "name": "Items in Selected Income and Retained Earnings Accounts for the Year",
+  "valueKey": "fields",
+  "columns": [
+   "account_no",
+   "item",
+   "debits",
+   "credits"
+  ]
+ },
+ "501": {
+  "name": "Guaranties and Suretyships",
+  "valueKey": "fields",
+  "columns": [
+   "if_the_resp_was_under_obligation_as",
+   "description",
+   "amount_of_contingent_liability",
+   "sole_or_joint_contingent_liability"
+  ]
+ },
+ "502": {
+  "name": "Compensating Balances and Short-Term Borrowing Agreements",
+  "valueKey": "fields",
+  "columns": [
+   "arrangement_description",
+   "balance_or_borrowing_amount",
+   "interest_rate",
+   "disclosure_text"
+  ]
+ },
+ "510": {
+  "name": "Separation of Debtholdings Between Road Property and Equipment",
+  "valueKey": "fields",
+  "columns": [
+   "title",
+   "source",
+   "balance_close_of_year"
+  ]
+ },
+ "512": {
+  "name": "Transactions Between Respondent and Companies or Persons Affiliated with Respondent for Services Received or Provided",
+  "valueKey": "fields",
+  "columns": [
+   "name_of_co_or_related_party_with_percent",
+   "nature_of_relationship",
+   "description_of_transactions",
+   "dollar_amounts_of_transactions",
+   "amount_due_from_or_to_related_parties"
+  ]
+ },
+ "700": {
+  "name": "Mileage Operated at Close of Year",
+  "valueKey": "cells",
+  "columns": [
+   "proportion_owned_or_leased",
+   "miles_of_road",
+   "miles_of_second_main_track",
+   "miles_of_all_other_main_tracks",
+   "miles_of_passing_crossovers_turnouts",
+   "miles_of_way_switching_tracks",
+   "miles_of_yard_switching_tracks",
+   "total_miles"
+  ]
+ },
+ "702": {
+  "name": "Miles of Road at Close of Year - By States and Territories (Single Track)",
+  "valueKey": "measures",
+  "columns": [
+   "miles_of_road_operated_by_resp_owned",
+   "line_of_proprietary_companies",
+   "line_operated_under_lease",
+   "line_operated_under_contract_etc",
+   "line_operated_under_trackage_rights",
+   "total_mileage_operated",
+   "line_owned_not_operated_by_respondent",
+   "new_line_constructed_during_year"
+  ]
+ },
+ "710": {
+  "name": "Inventory of Equipment",
+  "valueKey": "measures",
+  "columns": [
+   "units_in_service_of_resp_at_begin_of",
+   "new_units_purchased_or_built",
+   "new_units_leased_from_others",
+   "rebuilt_units_acquired_and_rebuilt_units",
+   "all_other_units_incl_reclass_and_second",
+   "units_retired_from_service_of_resp",
+   "owned_and_used",
+   "leased_from_others",
+   "total_in_service_of_respondent_col",
+   "agg_cap_of_units_reported_in_col",
+   "leased_to_others",
+   "respondent_begin_year_time_mileage_cars",
+   "all_others",
+   "units_installed_new_units_purch_or_built",
+   "new_or_rebuilt_units_leased_from_others",
+   "rebuilt_units_acquired_and_rebuilt_col_q",
+   "all_other_units_incl_reclass_and_s_col_r",
+   "units_retired_from_service_of_resp_col_s",
+   "owned_and_used_col_t",
+   "leased_from_others_col_u",
+   "total_in_service_of_resp_time_mileage",
+   "all_others_col_w",
+   "agg_cap_of_units_reported_in_col_col_x",
+   "leased_to_others_col_y"
+  ]
+ },
+ "710S": {
+  "name": "Unit Cost of Equipment Installed During the Year",
+  "valueKey": "measures",
+  "columns": [
+   "class_of_equipment",
+   "number_of_units",
+   "total_weight",
+   "total_cost",
+   "method_of_acquisition"
+  ]
+ },
+ "720": {
+  "name": "Track and Traffic Conditions",
+  "valueKey": "cells",
+  "columns": [
+   "mileage_of_tracks_at_end_of_period",
+   "average_annual_traffic_density_in",
+   "average_running_speed_limit",
+   "track_miles_under_slow_orders_at_end_of"
+  ]
+ },
+ "721": {
+  "name": "Ties Laid in Replacement"
+ },
+ "722": {
+  "name": "Ties Laid in Additional Tracks and in New Lines and Extensions"
+ },
+ "723": {
+  "name": "Rails Laid in Replacement"
+ },
+ "724": {
+  "name": "Rails Laid in Additional Tracks and in New Lines and Extensions"
+ },
+ "725": {
+  "name": "Weight of Rail"
+ },
+ "726": {
+  "name": "Summary of Track Replacements"
+ },
+ "750": {
+  "name": "Consumption of Diesel Fuel",
+  "valueKey": "cells",
+  "columns": [
+   "diesel_oil"
+  ]
+ },
+ "755": {
+  "name": "Railroad Operating Statistics",
+  "valueKey": "cells",
+  "columns": [
+   "freight_train",
+   "passenger_train"
+  ]
+ },
+ "A": {
+  "name": "Schedules Omitted by Respondent",
+  "valueKey": "fields",
+  "columns": [
+   "page_number",
+   "schedule_number",
+   "title"
+  ]
+ },
+ "B": {
+  "name": "Identity of Respondent"
+ },
+ "C": {
+  "name": "Voting Powers and Elections"
+ },
+ "Memoranda": {
+  "name": "Memoranda"
+ },
+ "PTC": {
+  "name": "PTC Supplement"
+ },
+ "PTC_330": {
+  "name": "PTC Road Property and Equipment",
+  "valueKey": "cells",
+  "columns": [
+   "balance_at_beginning_of_year",
+   "expend_during_the_year_for_original_road",
+   "expend_during_the_year_for_purch_of",
+   "expend_for_additions_during_the_year",
+   "credits_for_prop_retired_during_the_year",
+   "net_changes_during_the_year",
+   "balance_at_close_of_year"
+  ]
+ },
+ "PTC_332": {
+  "name": "PTC Depreciation Base and Rates",
+  "valueKey": "cells",
+  "columns": [
+   "owned_and_used.depreciation_base_beginning_of_year",
+   "owned_and_used.depreciation_base_close_of_year",
+   "owned_and_used.annual_composite_rate",
+   "leased_from_others.depreciation_base_beginning_of_year",
+   "leased_from_others.depreciation_base_close_of_year",
+   "leased_from_others.annual_composite_rate"
+  ]
+ },
+ "PTC_335": {
+  "name": "PTC Accumulated Depreciation",
+  "valueKey": "cells",
+  "columns": [
+   "balance_at_beginning_of_year",
+   "credits_to_reserve_during_the_year",
+   "other_credits",
+   "debits_to_reserve_during_the_year",
+   "other_debits",
+   "balance_at_close_of_year"
+  ]
+ },
+ "PTC_352B": {
+  "name": "PTC Investment in Railroad Property",
+  "valueKey": "cells",
+  "columns": [
+   "respondent",
+   "lessor_railroads",
+   "inactive",
+   "other_leased_properties"
+  ]
+ },
+ "PTC_410": {
+  "name": "PTC Railway Operating Expenses",
+  "valueKey": "cells",
+  "columns": [
+   "salaries_wages",
+   "material_tools_supplies_fuels_lubricants",
+   "purchased_services",
+   "general",
+   "total_freight_expense",
+   "passenger",
+   "total"
+  ]
+ },
+ "PTC_700": {
+  "name": "PTC Mileage Operated at Close of Year",
+  "valueKey": "cells",
+  "columns": [
+   "proportion_owned_or_leased",
+   "miles_of_road",
+   "miles_of_second_main_track",
+   "miles_of_all_other_main_tracks",
+   "miles_of_passing_crossovers_turnouts",
+   "miles_of_way_switching_tracks",
+   "miles_of_yard_switching_tracks",
+   "total_miles"
+  ]
+ },
+ "PTC_710": {
+  "name": "PTC Inventory of Equipment",
+  "valueKey": "measures",
+  "columns": [
+   "units_in_service_of_resp_at_begin_of",
+   "new_units_purchased_or_built",
+   "new_units_leased_from_others",
+   "rebuilt_units_acquired_and_rebuilt_units",
+   "all_other_units_incl_reclass_and_second",
+   "units_retired_from_service_of_resp",
+   "owned_and_used",
+   "leased_from_others",
+   "total_in_service_of_respondent_col",
+   "agg_cap_of_units_reported_in_col",
+   "leased_to_others",
+   "respondent_begin_year_time_mileage_cars",
+   "all_others",
+   "units_installed_new_units_purch_or_built",
+   "new_or_rebuilt_units_leased_from_others",
+   "rebuilt_units_acquired_and_rebuilt_col_q",
+   "all_other_units_incl_reclass_and_s_col_r",
+   "units_retired_from_service_of_resp_col_s",
+   "owned_and_used_col_t",
+   "leased_from_others_col_u",
+   "total_in_service_of_resp_time_mileage",
+   "all_others_col_w",
+   "agg_cap_of_units_reported_in_col_col_x",
+   "leased_to_others_col_y"
+  ]
+ },
+ "PTC_710S": {
+  "name": "PTC Unit Cost of Equipment Installed",
+  "valueKey": "measures",
+  "columns": [
+   "class_of_equipment",
+   "number_of_units",
+   "total_weight",
+   "total_cost",
+   "method_of_acquisition"
+  ]
+ },
+ "PTC_720": {
+  "name": "PTC Track and Traffic Conditions",
+  "valueKey": "cells",
+  "columns": [
+   "mileage_of_tracks_at_end_of_period",
+   "average_annual_traffic_density_in",
+   "average_running_speed_limit",
+   "track_miles_under_slow_orders_at_end_of"
+  ]
+ },
+ "PTC_Grants": {
+  "name": "Footnote: PTC Grants"
+ }
+}
