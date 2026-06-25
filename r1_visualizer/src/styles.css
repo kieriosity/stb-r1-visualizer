@@ -41,15 +41,32 @@
 .r1-nav-name { color: inherit; opacity: 0.9; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .r1-nav-item.has-data .r1-nav-id::after { content: '●'; color: #2a7d2a; font-size: 0.6em; vertical-align: middle; margin-left: 0.25rem; }
 .r1-nav-item.is-active.has-data .r1-nav-id::after { color: #9be79b; }
+.r1-nav-item.is-notes { padding-left: 1.2rem; }
+.r1-nav-item.is-notes .r1-nav-name { font-style: italic; opacity: 0.75; }
+.r1-nav-item.is-notes.has-data .r1-nav-id::after { content: none; }
+.r1-nav-finding-count { margin-left: auto; min-width: 1.25rem; height: 1.25rem; border: 1px solid currentColor; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.68rem; font-weight: 700; line-height: 1; }
 
 /* Form facsimile: the template grid rendered near-pixel from the xlsx. */
-.r1-fac-wrap { overflow-x: auto; background: #fff; padding: 10px; border: 1px solid #999; }
+.r1-fac-wrap { overflow-x: auto; background: #fff; padding: 10px; width: fit-content; max-width: 100%; }
 .r1-fac { border-collapse: collapse; table-layout: fixed; font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; font-size: 10.5px; line-height: 1.18; color: #000; }
 .r1-fac + .r1-fac { margin-top: 12px; }
 .r1-fac td { padding: 0 3px; vertical-align: top; overflow: hidden; }
+/* DQ-flagged rows: tint the row and stripe its left edge in the severity colour,
+   so the side-panel finding visibly tracks the part of the form that's wrong. */
+.r1-fac-flag.is-fatal td { background: #fdeaea; }
+.r1-fac-flag.is-warning td { background: #fff5da; }
+.r1-fac-flag.is-info td { background: #eef4fb; }
+.r1-fac-flag td:first-child { box-shadow: inset 3px 0 0 0 var(--r1-flag, #c0392b); }
+.r1-fac-flag.is-fatal td:first-child { --r1-flag: #c0392b; }
+.r1-fac-flag.is-warning td:first-child { --r1-flag: #c8860a; }
+.r1-fac-flag.is-info td:first-child { --r1-flag: #2b6cb0; }
+@keyframes r1-fac-flash { 0%, 100% { background: inherit; } 30% { background: #fff3b0; } }
+.r1-fac-flash td { animation: r1-fac-flash 1.6s ease; }
 
 /* Form page frame: heavy outer rule, header strip, centered title, footer */
-.r1-main { min-width: 0; min-height: 0; overflow: auto; }
+.r1-main { display: flex; gap: 1rem; align-items: flex-start; min-width: 0; min-height: 0; overflow: auto; }
+.r1-doc { flex: 1 1 auto; min-width: 0; }
+@media (max-width: 900px) { .r1-main { flex-direction: column; } }
 .r1-page { background: #fff; border: 2px solid var(--r1-line); }
 .r1-page-head { display: flex; justify-content: space-between; border-bottom: 2px solid var(--r1-line); font-weight: 700; padding: 0.2rem 0.7rem; gap: 1rem; }
 .r1-page-head b { font-weight: 700; }
@@ -85,6 +102,85 @@
 .r1-answer-blank { border-bottom: 1px solid var(--r1-line); padding: 0 0.2rem 0.05rem; }
 .r1-answer-list { margin: 0; padding-left: 1.1rem; }
 .r1-na { color: var(--r1-muted); }
+
+/* Review-only DQ findings, loaded from a sidecar (never the canonical R-1 JSON),
+   shown in a sticky side panel that tracks the form; clicking a finding scrolls to
+   and flashes its row. */
+.r1-dq { flex: 0 0 320px; position: sticky; top: 0; align-self: flex-start; max-height: calc(100vh - 2rem); overflow: auto; background: #fffdf5; border: 2px solid var(--r1-line); padding: 0.55rem 0.7rem 0.7rem; }
+@media (max-width: 900px) { .r1-dq { position: static; flex-basis: auto; max-height: none; width: 100%; } }
+.r1-dq-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
+.r1-dq-head h3 { margin: 0; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.r1-dq-counts { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+.r1-dq-pill { border: 1px solid var(--r1-line); border-radius: 999px; padding: 0.02rem 0.4rem; font-size: 0.66rem; font-weight: 700; }
+.r1-dq-pill.is-fatal { background: #f7d7d7; }
+.r1-dq-pill.is-warning { background: #ffe8a3; }
+.r1-dq-pill.is-info { background: #e6eef8; }
+.r1-dq-empty { color: var(--r1-muted); font-size: 0.8rem; margin: 0.25rem 0 0; }
+.r1-dq-list { margin: 0; padding: 0; list-style: none; }
+.r1-dq-item { padding: 0.4rem 0.45rem; border-left: 3px solid transparent; }
+.r1-dq-item + .r1-dq-item { border-top: 1px solid #e7dca8; }
+.r1-dq-item.is-fatal { border-left-color: #c0392b; }
+.r1-dq-item.is-warning { border-left-color: #c8860a; }
+.r1-dq-item.is-info { border-left-color: #2b6cb0; }
+.r1-dq-item.is-clickable { cursor: pointer; }
+.r1-dq-item.is-clickable:hover { background: #fff4cf; }
+.r1-dq-item-head { display: flex; align-items: baseline; gap: 0.4rem; flex-wrap: wrap; }
+.r1-dq-sev, .r1-dq-new { border: 1px solid var(--r1-line); padding: 0.03rem 0.32rem; font-size: 0.64rem; font-weight: 700; text-transform: uppercase; }
+.r1-dq-sev.is-fatal { background: #f7d7d7; }
+.r1-dq-sev.is-warning { background: #ffe8a3; }
+.r1-dq-sev.is-info { background: #e6eef8; }
+.r1-dq-line { font-size: 0.72rem; font-weight: 700; color: #2b6cb0; }
+.r1-dq-new { background: #fff; }
+.r1-dq-msg { margin: 0.25rem 0 0; font-size: 0.8rem; }
+.r1-dq-meta { margin: 0.18rem 0 0; font-size: 0.74rem; color: var(--r1-muted); }
+
+/* Filed title/cover pages: printable front matter with extracted values placed
+   into the same form positions as forms/R1-7-31-2026.pdf. */
+.r1-front-page { background: #fff; border: 1px solid #999; color: #000; font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; font-size: 10.5px; line-height: 1.16; margin-bottom: 1rem; min-width: 760px; padding: 10px; }
+.r1-title-meta { text-align: right; padding: 14px 180px 4px 0; }
+.r1-title-meta strong { display: block; font-size: 16px; }
+.r1-title-main { margin-top: 6px; }
+.r1-title-main h3 { font-size: 52px; line-height: 1; margin: 0; }
+.r1-title-main div { margin-left: 172px; margin-top: 6px; }
+.r1-title-boxes { align-items: stretch; display: grid; grid-template-columns: 2fr 3fr; margin-top: 0; max-width: 920px; }
+.r1-title-box { border: 1px solid var(--r1-line); min-height: 46px; padding: 2px 4px; }
+.r1-title-box + .r1-title-box { border-left: 0; text-align: center; }
+.r1-title-box-fill { font-weight: 400; margin-top: 4px; min-height: 24px; text-align: left; }
+.r1-title-box-carrier .r1-title-box-fill { display: inline-block; min-width: 260px; text-align: left; }
+.r1-title-to { margin-top: 2px; text-align: center; }
+.r1-title-to div { margin: 1px 0; }
+
+.r1-cover-page { border-color: #999; min-height: 650px; padding: 10px; }
+.r1-cover-initials { border: 1px solid var(--r1-line); padding: 2px 4px; }
+.r1-cover-center { align-items: center; display: flex; flex-direction: column; gap: 8px; min-height: 400px; padding-top: 70px; text-align: center; }
+.r1-cover-respondent { font-weight: 700; min-height: 58px; padding-top: 8px; }
+.r1-cover-correspondence { margin-top: 12px; max-width: 680px; }
+.r1-cover-correspondence p { margin: 0 0 34px; }
+.r1-cover-name-title { display: grid; gap: 20px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); max-width: 540px; }
+.r1-front-line { align-items: end; display: grid; grid-template-columns: auto minmax(170px, 1fr); gap: 2px; margin-top: 0; }
+.r1-front-line-wide { grid-template-columns: auto minmax(430px, 1fr); margin-top: 28px; max-width: 660px; }
+.r1-front-line-label { white-space: nowrap; }
+.r1-front-line-fill { border-bottom: 1px solid var(--r1-line); min-height: 17px; padding: 0 4px 1px; }
+.r1-cover-caption { margin-left: 0; }
+
+/* Filled-data panel — the extracted values for pages the facsimile grid cannot
+   line/account-fill (cover/title/verification envelope, and the narrative
+   schedules B, C, Memoranda, PTC_Grants). Rendered above the blank template. */
+.r1-filled { background: #fff; border: 2px solid var(--r1-line); margin-bottom: 1rem; padding: 0.6rem 0.85rem 0.75rem; }
+.r1-filled-head { margin: 0 0 0.5rem; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--r1-line); padding-bottom: 0.3rem; }
+.r1-filled-sub { margin: 0.7rem 0 0.35rem; font-size: 0.78rem; font-weight: 700; }
+.r1-filled-grid { margin: 0; }
+.r1-filled-row { display: grid; grid-template-columns: 11rem 1fr; gap: 0.6rem; padding: 0.2rem 0; align-items: baseline; }
+.r1-filled-label { color: var(--r1-muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.r1-filled-value { margin: 0; }
+.r1-content { display: flex; flex-direction: column; gap: 0.5rem; }
+.r1-content-block { margin: 0; font-size: 0.85rem; white-space: pre-wrap; }
+.r1-note-list { margin: 0; padding-left: 1.35rem; }
+.r1-note { padding: 0.35rem 0; }
+.r1-note + .r1-note { border-top: 1px solid #ddd; }
+.r1-note p { margin: 0.2rem 0 0; white-space: pre-wrap; }
+.r1-note-id { font-weight: 700; }
+.r1-muted { color: var(--r1-muted); }
 
 /* Misc */
 .r1-json { background: #fff; border: 1px solid var(--r1-line); padding: 0.75rem; overflow: auto; font-size: 0.78rem; }

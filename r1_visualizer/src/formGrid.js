@@ -1,7 +1,21 @@
 // Helpers for rendering the extracted Excel grid. Kept separate from the Preact
 // component so border/span behavior can be tested without a DOM renderer.
 
+// Pixels per Excel column-width unit - the single scale that turns the form's
+// column widths into on-screen pixels. Shared so the filled-data panel can match
+// the facsimile's exact width (and so a width tweak lives in one place).
+export const PX_PER_UNIT = 7.6
+
 const DOMINANT_EDGE_RATIO = 0.9
+
+// The rendered facsimile width (px) for a page: the widest printable panel. Lets
+// the filled-data panel above the facsimile line up to the same width as the form.
+export function pageWidthPx(page) {
+  if (!page) return 0
+  const panels = buildGridPanels(page)
+  const units = Math.max(0, ...panels.map((panel) => sum(panel.cols)))
+  return Math.round(units * PX_PER_UNIT)
+}
 
 export function buildGridPanels(page) {
   const colBands = inferColumnBands(page)

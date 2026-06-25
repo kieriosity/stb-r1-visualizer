@@ -23,8 +23,10 @@ if (typeof window !== 'undefined') {
       node.__r1Mounted = true
       mountR1Viewer(node, {
         dataBase: node.getAttribute('data-base') || undefined,
+        reviewFindingsBase: node.getAttribute('data-findings-base') || undefined,
         carrier: node.getAttribute('data-carrier') || undefined,
         year: node.getAttribute('data-year') || undefined,
+        version: node.getAttribute('data-version') || undefined,
       })
     })
   }

@@ -6,6 +6,7 @@ export const DEFAULTS = {
   //  - dev:        served by the Vite plugin at /data
   //  - WordPress:  e.g. "/wp-content/uploads/r1-data" or a CDN URL
   dataBase: '/data',
+  reviewFindingsBase: null,
   monetaryUnits: 'thousands',
 }
 

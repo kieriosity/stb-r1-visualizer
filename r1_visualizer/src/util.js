@@ -20,6 +20,7 @@ const NUM_FMT = new Intl.NumberFormat('en-US')
 export function formatValue(v) {
   if (v === null || v === undefined || v === '') return ''
   if (typeof v === 'number') {
+    if (v === 0) return '-'
     const s = NUM_FMT.format(Math.abs(v))
     return v < 0 ? `(${s})` : s
   }

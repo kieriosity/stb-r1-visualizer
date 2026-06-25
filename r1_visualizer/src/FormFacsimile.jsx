@@ -2,30 +2,43 @@ import { useMemo } from 'preact/hooks'
 import { formatValue } from './util.js'
 import { columnSpec } from './formLayout.js'
 import { analyzeColumns, indexData, isFillableMarker, resolveValue, selectBestValues } from './formData.js'
-import { borderStyle, buildGridPanels, layoutRows } from './formGrid.js'
+import { borderStyle, buildGridPanels, layoutRows, PX_PER_UNIT } from './formGrid.js'
+import { topSeverity } from './findingLocation.js'
+import { injectAnswers, matchAnswers } from './narrativeAnswers.js'
 
-// Pixels per Excel column-width unit, and base font px. The form is authored
-// in ~7pt Arial; we scale up uniformly for screen readability while keeping
-// the template's relative proportions, so it still reads as the printed form.
-const PX_PER_UNIT = 7.6
+// The printed line_no a template row carries (from its Line No. cell), so a DQ
+// finding can be pinned to the exact form row.
+function rowLineNo(cells, lineCol) {
+  if (lineCol == null) return null
+  const c = cells.find((x) => x.c === lineCol && x.t && /^\d+$/.test(String(x.t).trim()))
+  return c ? Number(String(c.t).trim()) : null
+}
+
+export function findingRowId(scheduleId, lineNo) {
+  return `r1-finding-row-${scheduleId}-${lineNo}`
+}
 
 const norm = (s) => String(s == null ? '' : s).replace(/\s+/g, '').replace(/\n/g, '')
 
 const ALIGN = { c: 'center', cc: 'center', r: 'right', l: 'left' }
 const EMPTY_MAP = new Map()
 
-export function FormFacsimile({ page, schedule, scheduleId, envelope }) {
+export function FormFacsimile({ page, schedule, scheduleId, envelope, findingsByLine }) {
   const meta = envelope?.form_metadata || {}
   const resp = envelope?.respondent || {}
 
   const data = useMemo(() => indexData(schedule, scheduleId, columnSpec), [schedule, scheduleId])
+  // narrative_qa schedules (B, C): place the filed answers onto the form's inquiry
+  // lines so they read in the facsimile rather than a separate panel above it.
+  const renderPage = useMemo(
+    () => injectAnswers(page, matchAnswers(page, schedule).rowAnswers), [page, schedule])
   const panels = useMemo(
-    () => buildGridPanels(page).map((panel) => ({
+    () => buildGridPanels(renderPage).map((panel) => ({
       ...panel,
       ...analyzeColumns(panel, scheduleId, columnSpec),
       laidOut: layoutRows(panel.rows, panel.cols.length),
     })),
-    [page, scheduleId])
+    [renderPage, scheduleId])
 
   // For a template row, find the data value object keyed by its account or
   // line-number cell, so we can drop values into the value columns.
@@ -66,8 +79,17 @@ export function FormFacsimile({ page, schedule, scheduleId, envelope }) {
               {panel.laidOut.map((rowCells, ri) => {
                 const colToKey = panel.rowMaps[ri] || EMPTY_MAP
                 const vals = rowValues(panel.rows[ri].cells, panel.lineCol, panel.accountCol, colToKey)
+                const lineNo = rowLineNo(panel.rows[ri].cells, panel.lineCol)
+                const rowFindings = lineNo != null && findingsByLine ? findingsByLine.get(lineNo) : null
+                const sev = rowFindings ? topSeverity(rowFindings) : null
                 return (
-                  <tr>
+                  <tr
+                    id={sev ? findingRowId(scheduleId, lineNo) : undefined}
+                    class={sev ? `r1-fac-flag is-${sev.toLowerCase()}` : undefined}
+                    title={sev
+                      ? rowFindings.map((f) => `${f.severity} ${f.rule_id}: ${f.message || ''}`).join('\n')
+                      : undefined}
+                  >
                     {rowCells.map((cell) => {
                       let text = cell.t || ''
                       // Header blanks: stamp respondent / year next to their labels.

@@ -14,8 +14,17 @@ from pathlib import Path
 import openpyxl
 
 ROOT = Path(__file__).resolve().parents[1]
-XLSX = ROOT / 'forms' / 'R1-7-31-2026.xlsx'
 OUT = ROOT / 'r1_visualizer' / 'src' / 'formTemplate.json'
+
+# The STB renumbered Schedule 200 (and revised 210, added 210A) between these
+# revisions, so the facsimile is generated per form version and the viewer renders
+# whichever matches the filing's envelope.form_metadata.form_version. Identical
+# pages are emitted once and tagged with both versions to keep the bundle small.
+# Chronological order; the LAST entry is the canonical page order for the nav.
+FORMS = [
+    ('2015-08-31', ROOT / 'forms' / 'R1-08-31-2015.xlsx'),
+    ('2026-07-31', ROOT / 'forms' / 'R1-7-31-2026.xlsx'),
+]
 
 # Sheet name -> data schedule_id (None = front matter / instructions, shown
 # static). Keeps form order via the workbook's own sheet order.
@@ -142,25 +151,63 @@ def extract_sheet(ws):
     return grid
 
 
-def main():
-    wb = openpyxl.load_workbook(XLSX, data_only=True)
-    out = {'pages': []}
+def extract_form(path):
+    """sheet name -> grid dict (cols/rows/[rowBreaks]/sheet/schedule) for one form."""
+    wb = openpyxl.load_workbook(path, data_only=True)
+    sheets = {}
     for name in wb.sheetnames:
-        ws = wb[name]
-        grid = extract_sheet(ws)
+        grid = extract_sheet(wb[name])
         if grid is None:
             continue
         grid['sheet'] = name
         grid['schedule'] = sheet_to_schedule(name)
-        out['pages'].append(grid)
+        sheets[name] = grid
+    return wb.sheetnames, sheets
+
+
+def _grid_body(grid):
+    body = {'cols': grid['cols'], 'rows': grid['rows']}
+    if 'rowBreaks' in grid:
+        body['rowBreaks'] = grid['rowBreaks']
+    return body
+
+
+def main():
+    versions = [v for v, _ in FORMS]
+    latest = versions[-1]                 # the current revision drives the page list / nav
+    per_version = {}                      # version -> {schedule_id: grid}
+    base_pages = None
+    for v, path in FORMS:
+        names, sheets = extract_form(path)
+        ordered = [sheets[n] for n in names if n in sheets]
+        per_version[v] = {g['schedule']: g for g in ordered if g['schedule']}
+        if v == latest:
+            base_pages = ordered           # full page set (incl. instruction pages)
+
+    # The NAV/page list always comes from the current revision (clean sheet names,
+    # separate instruction pages). For schedules the older form drew differently we
+    # keep its grid as a variant; the viewer swaps it in when a filing is on that
+    # revision, so old filings still match their own printed form.
+    variants = {}                          # schedule -> {older_version: grid body}
+    for v in versions[:-1]:
+        for sched, grid in per_version[v].items():
+            base = per_version[latest].get(sched)
+            if base is None:
+                continue                   # legacy schedule dropped from the current form
+            if (grid['cols'], grid['rows']) != (base['cols'], base['rows']):
+                variants.setdefault(sched, {})[v] = _grid_body(grid)
+
+    out = {'form_versions': versions, 'default_version': latest,
+           'pages': base_pages, 'variants': variants}
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, 'w', encoding='utf-8') as fh:
         json.dump(out, fh, ensure_ascii=False, separators=(',', ':'))
     size = os.path.getsize(OUT)
-    print(f'wrote {OUT}  ({size/1024:.0f} KB, {len(out["pages"])} pages)')
-    # quick report
-    for p in out['pages'][:8]:
-        print(f'  {p["sheet"]:28} sched={p["schedule"]}  rows={len(p["rows"])} cols={len(p["cols"])}')
+    print(f'wrote {OUT}  ({size/1024:.0f} KB, {len(base_pages)} pages from {latest}, '
+          f'{len(variants)} schedules with older-form variants)')
+    for sched in ('200', '210', '210A'):
+        vs = list(variants.get(sched, {}))
+        print(f'  {sched:5} variants={vs}')
 
 
 if __name__ == '__main__':
