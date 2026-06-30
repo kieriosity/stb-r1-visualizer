@@ -187,9 +187,17 @@ export function analyzeColumns(page, scheduleId, specs = {}) {
       if (headerAcc) { activeMap = mapBand(headerAcc); headerAcc = null }
       rowMaps[ri] = activeMap
     } else {
+      // A numbered instruction paragraph that a continued page prints above the table
+      // ("11. ...give names and extent of control...") is NOT a column header, but its
+      // body lands in a value column and would mis-map it (Schedule 310 page 27's
+      // "extent of control" capturing the Opening Balance column). Column headers and
+      // category subheaders are never numbered, so skipping numbered rows excludes the
+      // prose while keeping a real header band that sits above a blank row and a
+      // subheader (Schedule 200) - which a blank-row reset would have discarded.
+      const firstText = row.cells.map((c) => c.t).find((t) => t && String(t).trim())
+      const isInstruction = firstText && /^\s*\d+\.(\s|$)/.test(String(firstText))
       const isHeaderCell = (c) => c.t && candidate.has(c.c) && !MARKER.test(c.t.trim())
-      const hasHeaderText = row.cells.some(isHeaderCell)
-      if (hasHeaderText) {
+      if (!isInstruction && row.cells.some(isHeaderCell)) {
         if (!headerAcc) headerAcc = new Map()
         for (const c of row.cells) {
           if (isHeaderCell(c)) {
@@ -198,15 +206,6 @@ export function analyzeColumns(page, scheduleId, specs = {}) {
             headerAcc.set(c.c, list)
           }
         }
-      } else if (!row.cells.some((c) => c.t && String(c.t).trim())) {
-        // A truly blank separator row ends a header band. The real column-header band
-        // is the contiguous run immediately above the data; a continued page's
-        // numbered INSTRUCTION prose sits higher, separated by a blank row. Resetting
-        // here keeps that prose (e.g. "...names and extent of control...") out of the
-        // column→key matching so it can't mis-map a value column. Category subheader
-        // rows (text in a non-candidate descriptor column) are NOT blank, so a
-        // multi-row header band that carries them (e.g. 710) is preserved.
-        headerAcc = null
       }
       rowMaps[ri] = activeMap
     }
