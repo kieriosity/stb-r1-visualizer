@@ -52,21 +52,32 @@ export function scheduleRecords(schedule) {
 }
 
 export function indexData(schedule, scheduleId, specs = {}) {
-  const empty = { byAccount: new Map(), byLine: new Map() }
+  const empty = { byAccount: new Map(), byLine: new Map(), byBlockLine: new Map(), blocks: [] }
   if (!schedule) return empty
   const spec = specs[scheduleId] || {}
   const valueKey = spec.valueKey || 'values'
   const byAccount = new Map()
   const byLine = new Map()
+  // For schedules that paginate across facing pages that restart line numbering
+  // (e.g. 310): records carry `block` (0-based page-pair) + `source_line_no` (the
+  // printed per-page line). byBlockLine lets the facsimile place each record back on
+  // its own page instead of keying everything to one global, flattened line number.
+  const byBlockLine = new Map()
+  const blockSet = new Set()
 
   for (const record of scheduleRecords(schedule)) {
     const values = recordValues(record, valueKey)
     if (record.line_no != null) appendMapValue(byLine, String(record.line_no), values)
+    if (record.block != null) {
+      blockSet.add(record.block)
+      const sln = record.source_line_no != null ? record.source_line_no : record.line_no
+      if (sln != null) appendMapValue(byBlockLine, `${record.block}:${sln}`, values)
+    }
     const accounts = record.cross_check_accounts || []
     if (accounts.length) appendMapValue(byAccount, norm(accounts.join(',')), values)
   }
 
-  return { byAccount, byLine }
+  return { byAccount, byLine, byBlockLine, blocks: [...blockSet].sort((a, b) => a - b) }
 }
 
 export function selectBestValues(candidates, keyPaths) {
@@ -187,6 +198,15 @@ export function analyzeColumns(page, scheduleId, specs = {}) {
             headerAcc.set(c.c, list)
           }
         }
+      } else if (!row.cells.some((c) => c.t && String(c.t).trim())) {
+        // A truly blank separator row ends a header band. The real column-header band
+        // is the contiguous run immediately above the data; a continued page's
+        // numbered INSTRUCTION prose sits higher, separated by a blank row. Resetting
+        // here keeps that prose (e.g. "...names and extent of control...") out of the
+        // column→key matching so it can't mis-map a value column. Category subheader
+        // rows (text in a non-candidate descriptor column) are NOT blank, so a
+        // multi-row header band that carries them (e.g. 710) is preserved.
+        headerAcc = null
       }
       rowMaps[ri] = activeMap
     }

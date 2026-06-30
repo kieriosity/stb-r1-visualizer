@@ -52,7 +52,17 @@
   ]
  },
  "230": {
-  "name": "Capital Stock"
+  "name": "Capital Stock",
+  "valueKey": "cells",
+  "columns": [
+   "par_value",
+   "shares_authorized",
+   "shares_issued",
+   "shares_in_treasury",
+   "shares_outstanding",
+   "book_value_outstanding",
+   "book_value_in_treasury"
+  ]
  },
  "240": {
   "name": "Statement of Cash Flows",
@@ -145,10 +155,25 @@
   ]
  },
  "339": {
-  "name": "Accrued Liability - Leased Property"
+  "name": "Accrued Liability - Leased Property",
+  "valueKey": "cells",
+  "columns": [
+   "balance_at_beginning_of_year",
+   "charges_to_operating_expenses",
+   "other_credits",
+   "retirements",
+   "other_debits",
+   "balance_at_close_of_year"
+  ]
  },
  "340": {
-  "name": "Depreciation Base and Rates - Improvements to Road and Equipment Leased from Others"
+  "name": "Depreciation Base and Rates - Improvements to Road and Equipment Leased from Others",
+  "valueKey": "cells",
+  "columns": [
+   "depreciation_base_at_beginning_of_year",
+   "depreciation_base_at_close_of_year",
+   "annual_composite_rate_percent"
+  ]
  },
  "342": {
   "name": "Accumulated Depreciation - Improvements to Road and Equipment Leased from Others",
@@ -163,10 +188,25 @@
   ]
  },
  "350": {
-  "name": "Depreciation Base and Rates - Road and Equipment Leased to Others"
+  "name": "Depreciation Base and Rates - Road and Equipment Leased to Others",
+  "valueKey": "cells",
+  "columns": [
+   "depreciation_base_at_beginning_of_year",
+   "depreciation_base_at_close_of_year",
+   "annual_composite_rate_percent"
+  ]
  },
  "351": {
-  "name": "Accumulated Depreciation - Road and Equipment Leased to Others"
+  "name": "Accumulated Depreciation - Road and Equipment Leased to Others",
+  "valueKey": "cells",
+  "columns": [
+   "balance_at_beginning_of_year",
+   "charges_to_operating_expenses",
+   "other_credits",
+   "retirements",
+   "other_debits",
+   "balance_at_close_of_year"
+  ]
  },
  "352A": {
   "name": "Investment in Railroad Property Used in Transportation Service (By Company)",
@@ -239,7 +279,21 @@
   ]
  },
  "416": {
-  "name": "Supporting Schedule - Road"
+  "name": "Supporting Schedule - Road",
+  "valueKey": "cells",
+  "columns": [
+   "owned_and_used_investment_base",
+   "owned_and_used_accumulated_depreciation",
+   "owned_and_used_density_rate_percent",
+   "improvements_to_leased_investment_base",
+   "improvements_to_leased_accumulated_depreciation",
+   "improvements_to_leased_depreciation_rate_percent",
+   "capitalized_leases_investment_base",
+   "capitalized_leases_current_year_amortization",
+   "capitalized_leases_accumulated_amortization",
+   "total_investment_base",
+   "total_accumulated_depreciation_and_amortization"
+  ]
  },
  "417": {
   "name": "Specialized Service Subschedule - Transportation",
@@ -279,7 +333,7 @@
   "valueKey": "fields",
   "columns": [
    "account_no",
-   "item",
+   "item_description",
    "debits",
    "credits"
   ]
@@ -404,22 +458,84 @@
   ]
  },
  "721": {
-  "name": "Ties Laid in Replacement"
+  "name": "Ties Laid in Replacement",
+  "valueKey": "cells",
+  "columns": [
+   "new_ties_wooden_treated",
+   "new_ties_wooden_untreated",
+   "new_ties_concrete",
+   "new_ties_other",
+   "second_hand_ties_wooden_treated",
+   "second_hand_ties_wooden_untreated",
+   "second_hand_ties_other",
+   "total_crossties",
+   "switch_and_bridge_ties_board_feet",
+   "percent_of_spot_maintenance"
+  ]
  },
  "722": {
-  "name": "Ties Laid in Additional Tracks and in New Lines and Extensions"
+  "name": "Ties Laid in Additional Tracks and in New Lines and Extensions",
+  "valueKey": "cells",
+  "columns": [
+   "total_number_of_ties_applied",
+   "average_cost_per_tie",
+   "total_cost_cross_ties_new_tracks",
+   "board_feet_laid_in_tracks",
+   "average_cost_per_m_feet",
+   "total_cost_switch_and_bridge_ties_new_tracks",
+   "remarks"
+  ]
  },
  "723": {
-  "name": "Rails Laid in Replacement"
+  "name": "Rails Laid in Replacement",
+  "valueKey": "cells",
+  "columns": [
+   "new_rail_welded",
+   "new_rail_bolted",
+   "relay_rail_welded",
+   "relay_rail_bolted",
+   "total_welded",
+   "total_bolted",
+   "percent_of_spot_maintenance"
+  ]
  },
  "724": {
-  "name": "Rails Laid in Additional Tracks and in New Lines and Extensions"
+  "name": "Rails Laid in Additional Tracks and in New Lines and Extensions",
+  "valueKey": "cells",
+  "columns": [
+   "running_weight_pounds_per_yard",
+   "running_number_of_tons",
+   "running_total_cost",
+   "running_average_cost_per_ton",
+   "yard_weight_pounds_per_yard",
+   "yard_number_of_tons",
+   "yard_total_cost",
+   "yard_average_cost_per_ton"
+  ]
  },
  "725": {
-  "name": "Weight of Rail"
+  "name": "Weight of Rail",
+  "valueKey": "cells",
+  "columns": [
+   "line_haul_companies_miles_of_main_track",
+   "switching_and_terminal_companies_miles_of_all_track",
+   "remarks"
+  ]
  },
  "726": {
-  "name": "Summary of Track Replacements"
+  "name": "Summary of Track Replacements",
+  "valueKey": "cells",
+  "columns": [
+   "ties_crossties_number_replaced",
+   "ties_switch_and_bridge_board_feet",
+   "ties_crossties_percent_replaced",
+   "ties_switch_and_bridge_percent_replaced",
+   "rail_miles_replaced",
+   "rail_percent_replaced",
+   "ballast_cubic_yards_placed",
+   "surfacing_miles",
+   "surfacing_percent"
+  ]
  },
  "750": {
   "name": "Consumption of Diesel Fuel",

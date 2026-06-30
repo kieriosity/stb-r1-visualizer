@@ -116,3 +116,36 @@ test('analyzeColumns keeps schedule 710 mappings after N/A continuation rows', (
   assert.equal(rowMaps[line30Index].get(14), 'agg_cap_of_units_reported_in_col')
   assert.equal(rowMaps[line35Index].get(14), 'agg_cap_of_units_reported_in_col')
 })
+
+test('analyzeColumns maps schedule 310 facing-page columns past instruction prose', () => {
+  // The continued page (27) prints numbered instructions above the table, one of
+  // which reads "...names and extent of control...". A blank row separates that
+  // prose from the real column-header band; without that separation the Opening
+  // Balance column mis-mapped to extent_of_control. Both facing financial panels
+  // must map opening_balance, and both identity panels must map issuer_name.
+  const template = JSON.parse(fs.readFileSync(new URL('./formTemplate.json', import.meta.url), 'utf8'))
+  const specs = JSON.parse(fs.readFileSync(new URL('./columnSpec.json', import.meta.url), 'utf8'))
+  const page = template.pages.find((p) => p.schedule === '310')
+  const maps = buildGridPanels(page).map((panel) => {
+    const { rowMaps } = analyzeColumns(panel, '310', specs)
+    return new Map([...(rowMaps.find((m) => m?.size) || new Map())].map(([c, k]) => [k, c]))
+  })
+  const financial = maps.filter((m) => m.has('opening_balance'))
+  const identity = maps.filter((m) => m.has('issuer_name_and_lien_reference'))
+  assert.equal(financial.length, 2)
+  assert.equal(identity.length, 2)
+  for (const m of financial) assert.equal(m.has('extent_of_control'), false)
+})
+
+test('indexData keys paginated records by (block, source_line_no)', () => {
+  const schedule = {
+    items: [
+      { line_no: 1, block: 0, source_line_no: 1, fields: { opening_balance: 1445 } },
+      { line_no: 28, block: 1, source_line_no: 1, fields: { opening_balance: -500 } },
+    ],
+  }
+  const data = indexData(schedule, '310', { 310: { valueKey: 'fields' } })
+  assert.deepEqual(data.blocks, [0, 1])
+  assert.equal(data.byBlockLine.get('0:1')[0].opening_balance, 1445)
+  assert.equal(data.byBlockLine.get('1:1')[0].opening_balance, -500)
+})

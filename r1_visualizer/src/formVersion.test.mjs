@@ -5,12 +5,18 @@ import { pagesForVersion, resolveFormVersion } from './formVersion.js'
 
 const template = JSON.parse(readFileSync(new URL('./formTemplate.json', import.meta.url)))
 
-test('the nav/page list always comes from the current revision (clean sheets)', () => {
-  // Same page count and sheet names regardless of the filing's form version, so an
-  // old filing does not surface the older form's messy sheet names / merged pages.
-  const a = pagesForVersion(template, '2015-08-31').map((p) => p.sheet)
-  const b = pagesForVersion(template, '2026-07-31').map((p) => p.sheet)
-  assert.deepEqual(a, b)
+test('the page list is version-specific: legacy schedules only on the old form', () => {
+  // A page tagged with form_versions appears only on a matching filing: the retired
+  // pre-2016 schedules (230, 339, ...) show for a 2015 filing, the current-only
+  // schedule 210A shows for a 2026 filing, and front matter shows on both.
+  const s2015 = new Set(pagesForVersion(template, '2015-08-31').map((p) => p.schedule))
+  const s2026 = new Set(pagesForVersion(template, '2026-07-31').map((p) => p.schedule))
+  for (const legacy of ['230', '339', '350', '460', '726']) {
+    assert.ok(s2015.has(legacy), `${legacy} should appear for a 2015 filing`)
+    assert.ok(!s2026.has(legacy), `${legacy} should not appear for a 2026 filing`)
+  }
+  assert.ok(s2026.has('210A') && !s2015.has('210A'))
+  assert.ok(s2015.has('200') && s2026.has('200'))   // shared schedule on both
 })
 
 test('Schedule 200 grid swaps to the 29-line layout for a 2015 filing', () => {

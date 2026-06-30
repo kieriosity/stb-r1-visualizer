@@ -33,22 +33,36 @@ export function FormFacsimile({ page, schedule, scheduleId, envelope, findingsBy
   const renderPage = useMemo(
     () => injectAnswers(page, matchAnswers(page, schedule).rowAnswers), [page, schedule])
   const panels = useMemo(
-    () => buildGridPanels(renderPage).map((panel) => ({
-      ...panel,
-      ...analyzeColumns(panel, scheduleId, columnSpec),
-      laidOut: layoutRows(panel.rows, panel.cols.length),
-    })),
+    () => {
+      const built = buildGridPanels(renderPage)
+      // Row-band rank (top-to-bottom) = the facing-page block this panel belongs to,
+      // so a paginated schedule fills each page-pair from its own block of records.
+      const rowStarts = [...new Set(built.map((p) => p.rowStart))].sort((a, b) => a - b)
+      return built.map((panel) => ({
+        ...panel,
+        rowBand: rowStarts.indexOf(panel.rowStart),
+        ...analyzeColumns(panel, scheduleId, columnSpec),
+        laidOut: layoutRows(panel.rows, panel.cols.length),
+      }))
+    },
     [renderPage, scheduleId])
 
   // For a template row, find the data value object keyed by its account or
   // line-number cell, so we can drop values into the value columns.
-  function rowValues(rowCells, lineCol, accountCol, colToKey) {
+  function rowValues(rowCells, lineCol, accountCol, colToKey, block) {
     const keys = [...(colToKey?.values() || [])]
     // Prefer the line number: it is unique across a schedule's sheet, whereas
     // account numbers can repeat (e.g. "731, 732" on several lines).
     if (lineCol != null) {
       const ln = rowCells.find((c) => c.c === lineCol && c.t && /^\d+$/.test(c.t.trim()))
       if (ln) {
+        // A paginated schedule (line numbers restart per facing-page pair) keys its
+        // records by (block, printed line). Match this panel's block first; only fall
+        // back to the global line index for non-paginated schedules.
+        if (block != null && data.blocks.length) {
+          const hit = data.byBlockLine.get(`${data.blocks[block]}:${ln.t.trim()}`)
+          if (hit) return selectBestValues(hit, keys)
+        }
         const hit = data.byLine.get(ln.t.trim())
         if (hit) return selectBestValues(hit, keys)
       }
@@ -78,7 +92,7 @@ export function FormFacsimile({ page, schedule, scheduleId, envelope, findingsBy
             <tbody>
               {panel.laidOut.map((rowCells, ri) => {
                 const colToKey = panel.rowMaps[ri] || EMPTY_MAP
-                const vals = rowValues(panel.rows[ri].cells, panel.lineCol, panel.accountCol, colToKey)
+                const vals = rowValues(panel.rows[ri].cells, panel.lineCol, panel.accountCol, colToKey, panel.rowBand)
                 const lineNo = rowLineNo(panel.rows[ri].cells, panel.lineCol)
                 const rowFindings = lineNo != null && findingsByLine ? findingsByLine.get(lineNo) : null
                 const sev = rowFindings ? topSeverity(rowFindings) : null
