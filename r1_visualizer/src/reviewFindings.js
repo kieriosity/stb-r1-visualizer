@@ -27,7 +27,10 @@ export function normalizeReviewFindings(payload) {
       message: text(finding.message),
       suggested_action: text(finding.suggested_action),
       actual_value: text(finding.actual_value),
+      expected_value: text(finding.expected_value),
       is_new: Boolean(finding.is_new),
+      inherited: Boolean(finding.inherited),
+      expected_for_profile: Boolean(finding.expected_for_profile),
     }))
 }
 

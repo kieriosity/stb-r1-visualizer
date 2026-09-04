@@ -9,19 +9,21 @@ import { shouldRenderFacsimile } from './pageRender.js'
 import { navScheduleLabel, pageHasData, pageMatchesSchedule, primaryScheduleIdForPage, splitCombinedPages } from './pageSchedules.js'
 import { findingCountsByPage, findingsForPage, normalizeReviewFindings } from './reviewFindings.js'
 import { pagesForVersion, resolveFormVersion } from './formVersion.js'
+import { describeFiling, describeSchedule, ocrPageUrl, profileLabel } from './lineage.js'
 import formTemplate from './formTemplate.json'
 
 export function App({ options = {} }) {
   const config = useMemo(() => resolveConfig(options), [options])
   const source = useMemo(
-    () => createStaticSource(config.dataBase, config.reviewFindingsBase),
-    [config.dataBase, config.reviewFindingsBase])
+    () => createStaticSource(config.dataBase, config.reviewFindingsBase, config.lineageBase),
+    [config.dataBase, config.reviewFindingsBase, config.lineageBase])
 
   const [template] = useState(formTemplate)
   const [subs, setSubs] = useState([])
   const [sel, setSel] = useState(null) // { carrier, year, version, file }
   const [doc, setDoc] = useState(null)
   const [reviewFindings, setReviewFindings] = useState([])
+  const [lineage, setLineage] = useState(null)
   const [activePage, setActivePage] = useState(0)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -64,6 +66,18 @@ export function App({ options = {} }) {
       .catch((e) => setError(`Could not load ${sel.file}: ${e.message}`))
       .finally(() => setLoading(false))
   }, [sel, source])
+
+  // Load the submission's lineage (where each schedule came from) when the host
+  // provides it; absent lineage just hides the provenance panel.
+  useEffect(() => {
+    if (!sel || !config.lineageBase) {
+      setLineage(null)
+      return
+    }
+    source.loadLineage(sel)
+      .then((l) => setLineage(l))
+      .catch(() => setLineage(null))
+  }, [sel, source, config.lineageBase])
 
   const carriers = useMemo(() => [...new Set(subs.map((s) => s.carrier))].sort(), [subs])
   const years = useMemo(
@@ -155,7 +169,7 @@ export function App({ options = {} }) {
 
   return (
     <div class="r1-app">
-      <Picker {...{ carriers, years, versions, sel, pickSub }} />
+      <Picker {...{ carriers, years, versions, sel, pickSub }} lineage={lineage} />
       {error && <div class="r1-error">{error}</div>}
       {!template && !error && <div class="r1-loading">Loading form…</div>}
       {template && (
@@ -206,6 +220,9 @@ export function App({ options = {} }) {
               findings={pageFindings}
               scheduleId={page?.schedule}
               doc={doc}
+              lineage={lineage}
+              lineageScheduleId={primaryScheduleId}
+              ocrBase={config.ocrBase}
             />
           </main>
         </div>
@@ -228,7 +245,62 @@ function flashRow(scheduleId, lineNo) {
 // Side panel of DQ findings for the active schedule. Findings that resolve to a
 // printed line are clickable and scroll the facsimile to (and flash) that row, so
 // the feedback tracks the part of the form that has the problem.
-function DqSidePanel({ findings, scheduleId, doc }) {
+// Where the active schedule came from and how sure the pipeline is (TTF-6):
+// source profile, sheet/page/member with an OCR page-text link for scans, the
+// routing evidence, the per-schedule confidence and the source capture rate.
+function ProvenancePanel({ lineage, scheduleId, ocrBase }) {
+  if (!lineage) return null
+  const filing = describeFiling(lineage)
+  const sched = scheduleId ? describeSchedule(lineage, scheduleId) : null
+  const lowConfidence = sched?.confidence != null && sched.confidence < 0.8
+  return (
+    <details class="r1-prov" open>
+      <summary>Provenance</summary>
+      <dl class="r1-prov-list">
+        {filing.map(([k, v]) => (
+          <div class="r1-prov-row"><dt>{k}</dt><dd>{v}</dd></div>
+        ))}
+      </dl>
+      {scheduleId && !sched && (
+        <p class="r1-prov-note">Schedule {scheduleId}: not routed from the source
+          ({lineage.schedule_states?.[scheduleId] || 'no lineage recorded'}).</p>
+      )}
+      {sched && (
+        <div class="r1-prov-sched">
+          <h4>Schedule {scheduleId}</h4>
+          <dl class="r1-prov-list">
+            <div class="r1-prov-row"><dt>Read from</dt><dd>
+              {sched.sources.length ? sched.sources.map((src, i) => {
+                const url = ocrPageUrl(ocrBase, lineage, src.page)
+                return (
+                  <span class="r1-prov-src">{i > 0 ? ', ' : ''}
+                    {url ? <a href={url} target="_blank" rel="noopener" title="Open the OCR text of this page">{src.label}</a> : src.label}
+                  </span>
+                )
+              }) : <em class="r1-muted">not recorded</em>}
+            </dd></div>
+            {sched.routing && <div class="r1-prov-row"><dt>Identified by</dt><dd>{sched.routing}</dd></div>}
+            <div class="r1-prov-row"><dt>Confidence</dt>
+              <dd class={lowConfidence ? 'r1-prov-low' : ''}>{sched.confidenceLabel ?? '—'}</dd></div>
+            <div class="r1-prov-row"><dt>Source capture</dt>
+              <dd class={sched.tierAMissed ? 'r1-prov-low' : ''}>
+                {sched.captureLabel ?? '—'}
+                {sched.tierAMissed ? ` (${sched.tierAMissed} value${sched.tierAMissed === 1 ? '' : 's'} not captured: ${sched.tierAValues.slice(0, 6).join(', ')}${sched.tierAValues.length > 6 ? ', …' : ''})` : ''}
+              </dd></div>
+            <div class="r1-prov-row"><dt>Rows extracted</dt><dd>{sched.extractedRows}</dd></div>
+            {Object.keys(sched.transformations).length > 0 && (
+              <div class="r1-prov-row"><dt>Transformations</dt><dd>
+                {Object.entries(sched.transformations).map(([rule, n]) => `${rule} ×${n}`).join(', ')}
+              </dd></div>
+            )}
+          </dl>
+        </div>
+      )}
+    </details>
+  )
+}
+
+function DqSidePanel({ findings, scheduleId, doc, lineage, lineageScheduleId, ocrBase }) {
   const items = useMemo(() => {
     return (findings || [])
       .map((f) => ({ finding: f, lineNo: findingLineNo(f, doc) }))
@@ -247,6 +319,7 @@ function DqSidePanel({ findings, scheduleId, doc }) {
 
   return (
     <aside class="r1-dq" aria-label="Data-quality findings for this schedule">
+      <ProvenancePanel lineage={lineage} scheduleId={lineageScheduleId} ocrBase={ocrBase} />
       <div class="r1-dq-head">
         <h3>Data quality</h3>
         {items.length ? (
@@ -280,6 +353,12 @@ function DqSidePanel({ findings, scheduleId, doc }) {
                 {finding.actual_value != null && finding.actual_value !== '' && (
                   <p class="r1-dq-meta"><b>Actual:</b> {String(finding.actual_value)}</p>
                 )}
+                {finding.expected_value != null && finding.expected_value !== '' && (
+                  <p class="r1-dq-meta"><b>Expected:</b> {String(finding.expected_value)}</p>
+                )}
+                {finding.expected_for_profile && (
+                  <p class="r1-dq-meta r1-dq-expected" title="A documented steady-state warning for this filing's source profile">Expected for this source profile</p>
+                )}
                 {finding.suggested_action && (
                   <p class="r1-dq-meta"><b>Fix:</b> {finding.suggested_action}</p>
                 )}
@@ -292,7 +371,7 @@ function DqSidePanel({ findings, scheduleId, doc }) {
   )
 }
 
-function Picker({ carriers, years, versions, sel, pickSub }) {
+function Picker({ carriers, years, versions, sel, pickSub, lineage }) {
   if (!sel) return <div class="r1-picker r1-picker-empty">No submissions found.</div>
   return (
     <div class="r1-picker">
@@ -314,6 +393,11 @@ function Picker({ carriers, years, versions, sel, pickSub }) {
           {versions.map((v) => <option value={v}>v{v}</option>)}
         </select>
       </label>
+      {lineage?.source_profile && (
+        <span class="r1-profile-badge" title={profileLabel(lineage.source_profile)}>
+          {lineage.source_profile}
+        </span>
+      )}
     </div>
   )
 }

@@ -21,6 +21,21 @@
 .r1-picker label { display: flex; flex-direction: column; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--r1-muted); gap: 0.25rem; }
 .r1-picker select { font-size: 0.9rem; padding: 0.3rem 0.45rem; border: 1px solid var(--r1-line); border-radius: 0; background: #fff; min-width: 6rem; font-family: inherit; }
 .r1-picker-empty { color: var(--r1-muted); }
+.r1-profile-badge { align-self: center; margin-left: auto; border: 1px solid var(--r1-line); background: #fff; padding: 0.15rem 0.5rem; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.03em; }
+
+/* Provenance panel (TTF-6): sits above the DQ findings; source profile, where the
+   active schedule was read from, routing evidence, confidence, source capture. */
+.r1-prov { margin-bottom: 0.6rem; border-bottom: 1px solid #e7dca8; padding-bottom: 0.45rem; }
+.r1-prov summary { cursor: pointer; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; }
+.r1-prov-list { margin: 0.35rem 0 0; }
+.r1-prov-row { display: grid; grid-template-columns: 7.2rem 1fr; gap: 0.4rem; font-size: 0.76rem; padding: 0.1rem 0; }
+.r1-prov-row dt { color: var(--r1-muted); }
+.r1-prov-row dd { margin: 0; word-break: break-word; }
+.r1-prov-sched h4 { margin: 0.45rem 0 0.1rem; font-size: 0.78rem; }
+.r1-prov-low { color: #a5480a; font-weight: 700; }
+.r1-prov-note { font-size: 0.76rem; color: var(--r1-muted); margin: 0.3rem 0 0; }
+.r1-prov-src a { color: #2b6cb0; }
+.r1-dq-expected { color: #2a7d2a; font-style: italic; }
 
 /* Envelope header — styled after the form's cover page */
 .r1-envelope { text-align: center; margin-bottom: 1rem; }

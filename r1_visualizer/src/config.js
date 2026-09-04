@@ -7,6 +7,11 @@ export const DEFAULTS = {
   //  - WordPress:  e.g. "/wp-content/uploads/r1-data" or a CDN URL
   dataBase: '/data',
   reviewFindingsBase: null,
+  // Per-submission lineage JSON (source profile, per-schedule sources / routing /
+  // confidence / fidelity) and the OCR page-text endpoint for scanned filings;
+  // both optional - the host page provides them (tools/steward.py).
+  lineageBase: null,
+  ocrBase: null,
   monetaryUnits: 'thousands',
 }
 

@@ -24,6 +24,8 @@ if (typeof window !== 'undefined') {
       mountR1Viewer(node, {
         dataBase: node.getAttribute('data-base') || undefined,
         reviewFindingsBase: node.getAttribute('data-findings-base') || undefined,
+        lineageBase: node.getAttribute('data-lineage-base') || undefined,
+        ocrBase: node.getAttribute('data-ocr-base') || undefined,
         carrier: node.getAttribute('data-carrier') || undefined,
         year: node.getAttribute('data-year') || undefined,
         version: node.getAttribute('data-version') || undefined,
