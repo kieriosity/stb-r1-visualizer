@@ -83,3 +83,43 @@ export function describeFiling(lineage) {
   }
   return items.filter(([, v]) => v != null && v !== '')
 }
+
+
+// Every place a schedule's JSON differs from what the carrier printed (the
+// `as_filed` objects the pipeline writes wherever it standardised a label,
+// number or text). One entry per deviation, ready to list beside the form.
+const AS_FILED_LABELS = {
+  line_no: 'printed line no.',
+  title: 'printed title',
+  account_no: 'printed account no.',
+  section_id: 'printed section',
+  values: 'printed values',
+  text: 'printed text',
+  votes_entitled_rows: 'printed vote rows',
+}
+
+function fmtAsFiled(key, value) {
+  if (value == null) return key === 'title' || key === 'account_no' ? '(none printed)' : '—'
+  if (Array.isArray(value)) return value.join(' · ')
+  if (typeof value === 'object') return Object.entries(value).map(([k, v]) => `${k}: ${v}`).join(', ')
+  return String(value)
+}
+
+export function asFiledDeviations(schedule) {
+  const out = []
+  const push = (where, obj) => {
+    const af = obj?.as_filed
+    if (!af || typeof af !== 'object') return
+    for (const [k, v] of Object.entries(af)) {
+      out.push({ where, field: AS_FILED_LABELS[k] || k, printed: fmtAsFiled(k, v),
+        canonical: k === 'values' ? '' : String(obj[k === 'account_no' ? 'cells' : k]?.[k === 'account_no' ? 'account_no' : undefined] ?? obj[k] ?? '') })
+    }
+  }
+  for (const sec of schedule?.sections || []) {
+    for (const ln of sec.lines || []) push(`line ${ln.line_no}`, ln)
+  }
+  for (const row of schedule?.rows || []) push(`line ${row.line_no}`, row)
+  for (const [q, a] of Object.entries(schedule?.answers || {})) push(q, a)
+  for (const h of schedule?.child_collections?.holders || []) push(h.name || 'holder', h)
+  return out
+}

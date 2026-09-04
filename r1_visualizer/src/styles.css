@@ -36,6 +36,9 @@
 .r1-prov-note { font-size: 0.76rem; color: var(--r1-muted); margin: 0.3rem 0 0; }
 .r1-prov-src a { color: #2b6cb0; }
 .r1-dq-expected { color: #2a7d2a; font-style: italic; }
+.r1-asfiled-table { width: 100%; border-collapse: collapse; font-size: 0.72rem; margin-top: 0.3rem; }
+.r1-asfiled-table th, .r1-asfiled-table td { border: 1px solid #e7dca8; padding: 0.15rem 0.3rem; text-align: left; vertical-align: top; word-break: break-word; }
+.r1-asfiled-table th { font-weight: 700; background: #fff8e0; }
 
 /* Envelope header — styled after the form's cover page */
 .r1-envelope { text-align: center; margin-bottom: 1rem; }

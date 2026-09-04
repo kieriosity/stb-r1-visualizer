@@ -9,7 +9,7 @@ import { shouldRenderFacsimile } from './pageRender.js'
 import { navScheduleLabel, pageHasData, pageMatchesSchedule, primaryScheduleIdForPage, splitCombinedPages } from './pageSchedules.js'
 import { findingCountsByPage, findingsForPage, normalizeReviewFindings } from './reviewFindings.js'
 import { pagesForVersion, resolveFormVersion } from './formVersion.js'
-import { describeFiling, describeSchedule, ocrPageUrl, profileLabel } from './lineage.js'
+import { asFiledDeviations, describeFiling, describeSchedule, ocrPageUrl, profileLabel } from './lineage.js'
 import formTemplate from './formTemplate.json'
 
 export function App({ options = {} }) {
@@ -248,6 +248,27 @@ function flashRow(scheduleId, lineNo) {
 // Where the active schedule came from and how sure the pipeline is (TTF-6):
 // source profile, sheet/page/member with an OCR page-text link for scans, the
 // routing evidence, the per-schedule confidence and the source capture rate.
+// The as-filed deviations come from the submission JSON itself (schema
+// common__as_filed), so they render even without a lineage sidecar.
+function AsFiledPanel({ schedule }) {
+  const items = useMemo(() => asFiledDeviations(schedule), [schedule])
+  if (!items.length) return null
+  return (
+    <details class="r1-prov r1-asfiled">
+      <summary>As filed ({items.length})</summary>
+      <p class="r1-prov-note">Where the JSON standardised a label, number or text, this is what the carrier printed.</p>
+      <table class="r1-asfiled-table">
+        <thead><tr><th>Where</th><th>Field</th><th>Printed</th><th>In JSON</th></tr></thead>
+        <tbody>
+          {items.map((it) => (
+            <tr><td>{it.where}</td><td>{it.field}</td><td>{it.printed}</td><td>{it.canonical}</td></tr>
+          ))}
+        </tbody>
+      </table>
+    </details>
+  )
+}
+
 function ProvenancePanel({ lineage, scheduleId, ocrBase }) {
   if (!lineage) return null
   const filing = describeFiling(lineage)
@@ -320,6 +341,7 @@ function DqSidePanel({ findings, scheduleId, doc, lineage, lineageScheduleId, oc
   return (
     <aside class="r1-dq" aria-label="Data-quality findings for this schedule">
       <ProvenancePanel lineage={lineage} scheduleId={lineageScheduleId} ocrBase={ocrBase} />
+      <AsFiledPanel schedule={lineageScheduleId ? doc?.schedules?.[lineageScheduleId] : null} />
       <div class="r1-dq-head">
         <h3>Data quality</h3>
         {items.length ? (

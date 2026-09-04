@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { describeFiling, describeSchedule, lineageUrl, ocrPageUrl, profileLabel } from './lineage.js'
+import { asFiledDeviations, describeFiling, describeSchedule, lineageUrl, ocrPageUrl, profileLabel } from './lineage.js'
 
 const lineage = {
   source_profile: 'scanned_pdf_ocr',
@@ -62,4 +62,27 @@ test('describeFiling lists profile, identity and OCR run', () => {
   assert.deepEqual(describeFiling(null), [])
   assert.equal(profileLabel('nope'), 'nope')
   assert.equal(profileLabel(''), 'not recorded')
+})
+
+test('asFiledDeviations lists every printed value the pipeline standardised', () => {
+  const sched = {
+    sections: [{ section_id: 'assets', lines: [
+      { line_no: 3, title: 'Cash', values: { close: 5 } },
+      { line_no: 4, title: 'Total current assets', values: { close: 100 },
+        as_filed: { line_no: 5, title: null, values: { close: 0 } } },
+    ] }],
+    answers: { Q1: { answer_type: 'text', text: 'X Co', as_filed: { text: 'Name: X Co' } } },
+    child_collections: { holders: [{ name: 'UP', votes_entitled: 4853,
+      as_filed: { votes_entitled_rows: ['Common Stock - 4,465', 'Class A Stock - 388'] } }] },
+  }
+  const d = asFiledDeviations(sched)
+  assert.deepEqual(d.map((x) => [x.where, x.field, x.printed]), [
+    ['line 4', 'printed line no.', '5'],
+    ['line 4', 'printed title', '(none printed)'],
+    ['line 4', 'printed values', 'close: 0'],
+    ['Q1', 'printed text', 'Name: X Co'],
+    ['UP', 'printed vote rows', 'Common Stock - 4,465 · Class A Stock - 388'],
+  ])
+  assert.equal(d[0].canonical, '4')
+  assert.deepEqual(asFiledDeviations(null), [])
 })
