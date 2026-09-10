@@ -64,7 +64,7 @@ export function anchorFindings(findings, scheduleId, doc) {
 
 const SEVERITY_RANK = { FATAL: 3, WARNING: 2, INFO: 1 }
 
-// The most severe severity among a list of findings (for a row's marker colour).
+// The most severe severity among a list of findings (for a row's marker color).
 export function topSeverity(findings) {
   let top = null
   let rank = 0

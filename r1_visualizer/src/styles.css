@@ -69,7 +69,7 @@
 .r1-fac { border-collapse: collapse; table-layout: fixed; font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; font-size: 10.5px; line-height: 1.18; color: #000; }
 .r1-fac + .r1-fac { margin-top: 12px; }
 .r1-fac td { padding: 0 3px; vertical-align: top; overflow: hidden; }
-/* DQ-flagged rows: tint the row and stripe its left edge in the severity colour,
+/* DQ-flagged rows: tint the row and stripe its left edge in the severity color,
    so the side-panel finding visibly tracks the part of the form that's wrong. */
 .r1-fac-flag.is-fatal td { background: #fdeaea; }
 .r1-fac-flag.is-warning td { background: #fff5da; }

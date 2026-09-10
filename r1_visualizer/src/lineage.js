@@ -86,7 +86,7 @@ export function describeFiling(lineage) {
 
 
 // Every place a schedule's JSON differs from what the carrier printed (the
-// `as_filed` objects the pipeline writes wherever it standardised a label,
+// `as_filed` objects the pipeline writes wherever it standardized a label,
 // number or text). One entry per deviation, ready to list beside the form.
 const AS_FILED_LABELS = {
   line_no: 'printed line no.',

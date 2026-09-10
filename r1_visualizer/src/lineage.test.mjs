@@ -64,7 +64,7 @@ test('describeFiling lists profile, identity and OCR run', () => {
   assert.equal(profileLabel(''), 'not recorded')
 })
 
-test('asFiledDeviations lists every printed value the pipeline standardised', () => {
+test('asFiledDeviations lists every printed value the pipeline standardized', () => {
   const sched = {
     sections: [{ section_id: 'assets', lines: [
       { line_no: 3, title: 'Cash', values: { close: 5 } },

@@ -256,7 +256,7 @@ function AsFiledPanel({ schedule }) {
   return (
     <details class="r1-prov r1-asfiled">
       <summary>As filed ({items.length})</summary>
-      <p class="r1-prov-note">Where the JSON standardised a label, number or text, this is what the carrier printed.</p>
+      <p class="r1-prov-note">Where the JSON standardized a label, number or text, this is what the carrier printed.</p>
       <table class="r1-asfiled-table">
         <thead><tr><th>Where</th><th>Field</th><th>Printed</th><th>In JSON</th></tr></thead>
         <tbody>
