@@ -21,6 +21,33 @@
 .r1-picker label { display: flex; flex-direction: column; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--r1-muted); gap: 0.25rem; }
 .r1-picker select { font-size: 0.9rem; padding: 0.3rem 0.45rem; border: 1px solid var(--r1-line); border-radius: 0; background: #fff; min-width: 6rem; font-family: inherit; }
 .r1-picker-empty { color: var(--r1-muted); }
+.r1-source-action { display: flex; gap: .8rem; align-items: center; padding: .45rem .9rem; border-bottom: 1px solid #bbb; }
+.r1-source-action span { color: #555; font-size: .8rem; }
+.r1-source-action button, .r1-compare button { min-height: 36px; border: 1px solid #333; background: #fff; color: #111; padding: .4rem .7rem; cursor: pointer; font: inherit; }
+.r1-source-action button:hover, .r1-compare button:hover:not(:disabled) { background: #e8edf3; }
+.r1-compare button:disabled, .r1-source-action button:disabled { opacity: .45; cursor: default; }
+.r1-compare { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; overflow: hidden; background: #e8ebee; }
+.r1-compare-toolbar { display: flex; flex-wrap: wrap; gap: .65rem; align-items: center; padding: .6rem .8rem; background: #fff; border-bottom: 1px solid #aaa; }
+.r1-compare-toolbar > strong { margin-right: auto; }
+.r1-compare label { display: flex; gap: .4rem; align-items: center; font-size: .8rem; }
+.r1-compare select { font: inherit; min-height: 34px; max-width: 100%; padding: .25rem .4rem; color: #111; background: #fff; border: 1px solid #777; }
+.r1-compare-context { padding: .45rem .8rem; display: flex; flex-wrap: wrap; gap: .3rem 1rem; background: #f4f6f8; font-size: .76rem; color: #454c54; }
+.r1-compare-context span:first-child { font-weight: 700; }
+.r1-compare-panes { display: grid; grid-template-columns: repeat(2, minmax(320px, 1fr)); flex: 1 1 auto; min-height: 0; overflow: auto; gap: 8px; padding: 8px; }
+.r1-compare-pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; background: #fff; border: 1px solid #aab0b6; }
+.r1-compare-pane-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .5rem; padding: .5rem .7rem; border-bottom: 1px solid #bbb; background: #fff; }
+.r1-source-viewport, .r1-extract-viewport { flex: 1 1 auto; min-height: 0; min-width: 0; overflow: auto; overscroll-behavior: contain; padding: 12px; }
+.r1-source-viewport { background: #d8dce0; }
+.r1-source-viewport img { max-width: none; height: auto; margin: 0; box-shadow: 0 1px 5px #0003; }
+.r1-extract-picker { padding: .4rem .7rem; border-bottom: 1px solid #ddd; flex-wrap: wrap; }
+.r1-extract-picker select { flex: 1 1 auto; min-width: 0; }
+.r1-compare-empty { padding: 1.5rem; max-width: 42rem; color: #454c54; }
+.r1-compare-empty h3 { color: #222; font-size: 1rem; }
+.r1-compare-correction { padding: .35rem .7rem; font-size: .76rem; background: #fff3d6; border-bottom: 1px solid #dfc78e; }
+.r1-compare-findings { margin-top: 1rem; font-size: .8rem; }
+.r1-compare-findings > summary { padding: .6rem; cursor: pointer; border-top: 1px solid #bbb; }
+.r1-compare-findings .r1-dq { position: static; max-height: none; width: 100%; }
+.r1-compare :focus-visible, .r1-source-action :focus-visible { outline: 3px solid #2874ad; outline-offset: 2px; }
 .r1-profile-badge { align-self: center; margin-left: auto; border: 1px solid var(--r1-line); background: #fff; padding: 0.15rem 0.5rem; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.03em; }
 
 /* Provenance panel (TTF-6): sits above the DQ findings; source profile, where the

@@ -12,6 +12,7 @@ export const DEFAULTS = {
   // both optional - the host page provides them (tools/steward.py).
   lineageBase: null,
   ocrBase: null,
+  sourceBase: null,
   monetaryUnits: 'thousands',
 }
 

@@ -26,6 +26,7 @@ if (typeof window !== 'undefined') {
         reviewFindingsBase: node.getAttribute('data-findings-base') || undefined,
         lineageBase: node.getAttribute('data-lineage-base') || undefined,
         ocrBase: node.getAttribute('data-ocr-base') || undefined,
+        sourceBase: node.getAttribute('data-source-base') || undefined,
         carrier: node.getAttribute('data-carrier') || undefined,
         year: node.getAttribute('data-year') || undefined,
         version: node.getAttribute('data-version') || undefined,

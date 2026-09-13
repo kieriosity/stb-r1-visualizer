@@ -11,6 +11,7 @@ import { findingCountsByPage, findingsForPage, normalizeReviewFindings } from '.
 import { pagesForVersion, resolveFormVersion } from './formVersion.js'
 import { asFiledDeviations, describeFiling, describeSchedule, ocrPageUrl, profileLabel } from './lineage.js'
 import formTemplate from './formTemplate.json'
+import { SourceComparison } from './SourceComparison.jsx'
 
 export function App({ options = {} }) {
   const config = useMemo(() => resolveConfig(options), [options])
@@ -21,12 +22,15 @@ export function App({ options = {} }) {
   const [template] = useState(formTemplate)
   const [subs, setSubs] = useState([])
   const [sel, setSel] = useState(null) // { carrier, year, version, file }
-  const [doc, setDoc] = useState(null)
+  const [loadedDoc, setLoadedDoc] = useState(null)
+  const doc = loadedDoc && loadedDoc.file === sel?.file ? loadedDoc.data : null
   const [reviewFindings, setReviewFindings] = useState([])
   const [lineage, setLineage] = useState(null)
   const [activePage, setActivePage] = useState(0)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [compareSource, setCompareSource] = useState(() => Boolean(config.sourceBase &&
+    typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('sourcePage')))
 
   // Load manifest once.
   useEffect(() => {
@@ -59,24 +63,29 @@ export function App({ options = {} }) {
   // Load selected submission.
   useEffect(() => {
     if (!sel) return
+    let cancelled = false
     setLoading(true)
     setError(null)
     source.loadSubmission(sel.file)
-      .then((d) => setDoc(d))
-      .catch((e) => setError(`Could not load ${sel.file}: ${e.message}`))
-      .finally(() => setLoading(false))
+      .then((d) => { if (!cancelled) setLoadedDoc({ file: sel.file, data: d }) })
+      .catch((e) => { if (!cancelled) setError(`Could not load ${sel.file}: ${e.message}`) })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
   }, [sel, source])
 
   // Load the submission's lineage (where each schedule came from) when the host
   // provides it; absent lineage just hides the provenance panel.
   useEffect(() => {
+    let cancelled = false
+    setLineage(null)
     if (!sel || !config.lineageBase) {
       setLineage(null)
       return
     }
     source.loadLineage(sel)
-      .then((l) => setLineage(l))
-      .catch(() => setLineage(null))
+      .then((l) => { if (!cancelled) setLineage(l) })
+      .catch(() => { if (!cancelled) setLineage(null) })
+    return () => { cancelled = true }
   }, [sel, source, config.lineageBase])
 
   const carriers = useMemo(() => [...new Set(subs.map((s) => s.carrier))].sort(), [subs])
@@ -167,12 +176,35 @@ export function App({ options = {} }) {
     () => findingCountsByPage(navPages, reviewFindings, sel),
     [navPages, reviewFindings, sel])
 
+  function renderComparedPage(p) {
+    const id = primaryScheduleIdForPage(p)
+    const findings = findingsForPage(reviewFindings, sel, p)
+    if (p.notesFor) return <NotesPanel id={p.notesFor} schedule={doc.schedules?.[p.notesFor]} />
+    return <><FilledPanel page={p} doc={doc} width={pageWidthPx(p)} />
+      {shouldRenderFacsimile(p) && <FormFacsimile page={p} schedule={doc.schedules?.[id]}
+        scheduleId={id} envelope={doc.envelope} panelIndex={p.comparisonPanel}
+        findingsByLine={anchorFindings(findings, id, doc).byLine} />}</>
+  }
+
+  function renderComparedFindings(p) {
+    return <DqSidePanel findings={findingsForPage(reviewFindings, sel, p)} scheduleId={p.schedule}
+      doc={doc} lineage={lineage} lineageScheduleId={primaryScheduleIdForPage(p)} ocrBase={config.ocrBase} />
+  }
+
   return (
     <div class="r1-app">
       <Picker {...{ carriers, years, versions, sel, pickSub }} lineage={lineage} />
+      {config.sourceBase && !compareSource && <div class="r1-source-action">
+        <button type="button" disabled={!doc || loading} onClick={() => setCompareSource(true)}>Compare source pages</button>
+        <span>Original PDF beside the extracted form</span>
+      </div>}
       {error && <div class="r1-error">{error}</div>}
       {!template && !error && <div class="r1-loading">Loading form…</div>}
-      {template && (
+      {compareSource && doc && <SourceComparison key={sel.file} base={config.sourceBase} sel={sel}
+        navPages={navPages} scheduleId={primaryScheduleId} renderPage={renderComparedPage}
+        renderFindings={renderComparedFindings} close={() => setCompareSource(false)} />}
+      {compareSource && !doc && !error && <div class="r1-loading">Loading extraction…</div>}
+      {template && !compareSource && (
         <div class="r1-body">
           <nav class="r1-nav">
             <ul>

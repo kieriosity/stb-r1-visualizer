@@ -23,7 +23,7 @@ const norm = (s) => String(s == null ? '' : s).replace(/\s+/g, '').replace(/\n/g
 const ALIGN = { c: 'center', cc: 'center', r: 'right', l: 'left' }
 const EMPTY_MAP = new Map()
 
-export function FormFacsimile({ page, schedule, scheduleId, envelope, findingsByLine }) {
+export function FormFacsimile({ page, schedule, scheduleId, envelope, findingsByLine, panelIndex = null }) {
   const meta = envelope?.form_metadata || {}
   const resp = envelope?.respondent || {}
 
@@ -79,7 +79,7 @@ export function FormFacsimile({ page, schedule, scheduleId, envelope, findingsBy
 
   return (
     <div class="r1-fac-wrap">
-      {panels.map((panel) => {
+      {panels.filter((_, index) => panelIndex == null || index === panelIndex).map((panel) => {
         const naturalWidth = panel.cols.reduce((s, w) => s + w, 0)
         const displayWidth = panel.widthUnits || naturalWidth
         const colScale = naturalWidth > 0 ? displayWidth / naturalWidth : 1
