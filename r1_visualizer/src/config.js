@@ -13,6 +13,7 @@ export const DEFAULTS = {
   lineageBase: null,
   ocrBase: null,
   sourceBase: null,
+  issuesBase: null,
   monetaryUnits: 'thousands',
 }
 

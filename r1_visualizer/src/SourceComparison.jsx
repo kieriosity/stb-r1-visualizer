@@ -8,7 +8,7 @@ function Zoom({ label, value, onChange }) {
   </select></label>
 }
 
-export function SourceComparison({ base, sel, navPages, scheduleId, renderPage, renderFindings, close }) {
+export function SourceComparison({ base, sel, navPages, scheduleId, renderPage, renderFindings, close, issuesBase, reportIssue }) {
   const [manifest, setManifest] = useState(null)
   const [error, setError] = useState(null)
   const [selection, setSelection] = useState({ page: 1, index: null })
@@ -85,6 +85,10 @@ export function SourceComparison({ base, sel, navPages, scheduleId, renderPage, 
         <label><input type="checkbox" checked={pageTogether}
           onChange={(e) => setPageTogether(e.currentTarget.checked)} /> Page together</label>
       </>}
+      {issuesBase && <><button type="button" disabled={!manifest || !reportIssue}
+        title={!reportIssue ? 'Load a filing on localhost or HTTPS to report an issue.' : undefined}
+        onClick={() => reportIssue(chosen?.page, { page: pageNo, binding: manifest.binding, imageReady, pageTogether })}>Report issue</button>
+        <a href={`${issuesBase}/`} target="_blank" rel="noopener">View issue log</a></>}
     </div>
     {error && <div class="r1-compare-empty" role="alert">{error}</div>}
     {!manifest && !error && <div class="r1-loading" role="status">Loading source information…</div>}

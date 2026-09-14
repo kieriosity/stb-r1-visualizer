@@ -25,6 +25,15 @@
 .r1-source-action span { color: #555; font-size: .8rem; }
 .r1-source-action button, .r1-compare button { min-height: 36px; border: 1px solid #333; background: #fff; color: #111; padding: .4rem .7rem; cursor: pointer; font: inherit; }
 .r1-source-action button:hover, .r1-compare button:hover:not(:disabled) { background: #e8edf3; }
+.r1-issue-dialog { width: min(640px, 92vw); max-height: 90dvh; overflow: auto; border: 1px solid #555; padding: 1.4rem; color: #111; background: #fff; }
+.r1-issue-dialog::backdrop { background: #0006; }
+.r1-issue-dialog h2 { margin-top: 0; font-size: 1.2rem; }
+.r1-issue-dialog label { display: flex; flex-direction: column; gap: .3rem; margin: .8rem 0; }
+.r1-issue-dialog input, .r1-issue-dialog select, .r1-issue-dialog textarea { font: inherit; padding: .5rem; border: 1px solid #777; width: 100%; }
+.r1-issue-dialog button { font: inherit; padding: .55rem .9rem; min-height: 40px; cursor: pointer; }
+.r1-issue-dialog code { overflow-wrap: anywhere; }
+.r1-issue-context { background: #eef2f6; padding: .6rem; }
+.r1-issue-actions { display: flex; justify-content: flex-end; gap: .7rem; }
 .r1-compare button:disabled, .r1-source-action button:disabled { opacity: .45; cursor: default; }
 .r1-compare { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; overflow: hidden; background: #e8ebee; }
 .r1-compare-toolbar { display: flex; flex-wrap: wrap; gap: .65rem; align-items: center; padding: .6rem .8rem; background: #fff; border-bottom: 1px solid #aaa; }

@@ -1,6 +1,7 @@
 // Data-source abstraction. Today: static fetch of canonical JSON files.
 // Later: a FastAPI-backed impl can satisfy the same interface without
 // touching the renderers.
+import { submissionSnapshot } from './issueReport.js'
 
 export function createStaticSource(dataBase, reviewFindingsBase = null, lineageBase = null) {
   const base = dataBase.replace(/\/$/, '')
@@ -20,6 +21,12 @@ export function createStaticSource(dataBase, reviewFindingsBase = null, lineageB
     return res.json()
   }
 
+  async function loadSubmissionSnapshot(file) {
+    const res = await fetch(`${base}/${file}`)
+    if (!res.ok) throw new Error(`${file} -> HTTP ${res.status}`)
+    return submissionSnapshot(res)
+  }
+
   async function loadReviewFindings() {
     if (!findingsBase) return []
     const res = await fetch(`${findingsBase}/findings.json`)
@@ -37,5 +44,5 @@ export function createStaticSource(dataBase, reviewFindingsBase = null, lineageB
     return res.json()
   }
 
-  return { listSubmissions, loadSubmission, loadReviewFindings, loadLineage }
+  return { listSubmissions, loadSubmission, loadSubmissionSnapshot, loadReviewFindings, loadLineage }
 }

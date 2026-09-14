@@ -71,6 +71,20 @@ manifest's output/log/source identity. An unavailable or changed source shows a
 message; the app does not substitute another filing or OCR text. Static and
 WordPress hosts without the source endpoint keep the ordinary form view.
 
+## Issue reports
+
+Hosts that provide `data-issues-base` enable **Report issue** in both form and
+source-comparison views, plus **View issue log**. The report dialog captures the
+filing/version, displayed output SHA-256, selected schedules and extracted panel,
+and (in comparison mode) the physical PDF page and source binding. Select an issue
+type and describe the observed/expected behavior. The backend saves a separate
+JSON report with source/run identity; failures retain the draft and retries reuse
+the same issue ID. Saving does not change extracted data or review approval state.
+Use localhost or HTTPS for reporting; without Web Crypto the viewer still renders
+but cannot bind a report to the loaded output. Static hosts without an issue
+endpoint omit these controls. See the pipeline's `docs/transformation-issues/README.md`
+for storage, context limits, and triage.
+
 ## Verify changes
 
 ```bash

@@ -12,6 +12,8 @@ import { pagesForVersion, resolveFormVersion } from './formVersion.js'
 import { asFiledDeviations, describeFiling, describeSchedule, ocrPageUrl, profileLabel } from './lineage.js'
 import formTemplate from './formTemplate.json'
 import { SourceComparison } from './SourceComparison.jsx'
+import { IssueReport } from './IssueReport.jsx'
+import { captureIssueContext } from './issueReport.js'
 
 export function App({ options = {} }) {
   const config = useMemo(() => resolveConfig(options), [options])
@@ -23,6 +25,7 @@ export function App({ options = {} }) {
   const [subs, setSubs] = useState([])
   const [sel, setSel] = useState(null) // { carrier, year, version, file }
   const [loadedDoc, setLoadedDoc] = useState(null)
+  const [issueContext, setIssueContext] = useState(null)
   const doc = loadedDoc && loadedDoc.file === sel?.file ? loadedDoc.data : null
   const [reviewFindings, setReviewFindings] = useState([])
   const [lineage, setLineage] = useState(null)
@@ -66,8 +69,8 @@ export function App({ options = {} }) {
     let cancelled = false
     setLoading(true)
     setError(null)
-    source.loadSubmission(sel.file)
-      .then((d) => { if (!cancelled) setLoadedDoc({ file: sel.file, data: d }) })
+    source.loadSubmissionSnapshot(sel.file)
+      .then((snapshot) => { if (!cancelled) setLoadedDoc({ file: sel.file, ...snapshot }) })
       .catch((e) => { if (!cancelled) setError(`Could not load ${sel.file}: ${e.message}`) })
       .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
@@ -191,18 +194,28 @@ export function App({ options = {} }) {
       doc={doc} lineage={lineage} lineageScheduleId={primaryScheduleIdForPage(p)} ocrBase={config.ocrBase} />
   }
 
+  const reportIssue = config.issuesBase && doc && loadedDoc.sha256
+    ? (p, comparison = null) => setIssueContext(captureIssueContext(sel, loadedDoc.sha256, p, formVersion, comparison))
+    : null
+
   return (
     <div class="r1-app">
       <Picker {...{ carriers, years, versions, sel, pickSub }} lineage={lineage} />
-      {config.sourceBase && !compareSource && <div class="r1-source-action">
-        <button type="button" disabled={!doc || loading} onClick={() => setCompareSource(true)}>Compare source pages</button>
-        <span>Original PDF beside the extracted form</span>
+      {(config.sourceBase || config.issuesBase) && !compareSource && <div class="r1-source-action">
+        {config.sourceBase && <><button type="button" disabled={!doc || loading} onClick={() => setCompareSource(true)}>Compare source pages</button>
+          <span>Original PDF beside the extracted form</span></>}
+        {config.issuesBase && <><button type="button" disabled={!reportIssue || loading}
+          title={!reportIssue ? 'Load a filing on localhost or HTTPS to report an issue.' : undefined}
+          onClick={() => reportIssue(page)}>Report issue</button>
+          <a href={`${config.issuesBase}/`} target="_blank" rel="noopener">View issue log</a></>}
       </div>}
+      {issueContext && <IssueReport base={config.issuesBase} context={issueContext} close={() => setIssueContext(null)} />}
       {error && <div class="r1-error">{error}</div>}
       {!template && !error && <div class="r1-loading">Loading form…</div>}
       {compareSource && doc && <SourceComparison key={sel.file} base={config.sourceBase} sel={sel}
         navPages={navPages} scheduleId={primaryScheduleId} renderPage={renderComparedPage}
-        renderFindings={renderComparedFindings} close={() => setCompareSource(false)} />}
+        renderFindings={renderComparedFindings} close={() => setCompareSource(false)}
+        issuesBase={config.issuesBase} reportIssue={reportIssue} />}
       {compareSource && !doc && !error && <div class="r1-loading">Loading extraction…</div>}
       {template && !compareSource && (
         <div class="r1-body">
