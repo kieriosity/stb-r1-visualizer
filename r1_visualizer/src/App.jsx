@@ -3,6 +3,8 @@ import { createStaticSource } from './dataSource.js'
 import { resolveConfig } from './config.js'
 import { FormFacsimile, findingRowId } from './FormFacsimile.jsx'
 import { FilledPanel, NotesPanel } from './FilledPanel.jsx'
+import { FiledDetails } from './FiledDetails.jsx'
+import { includeFiledSchedules } from './filedDetails.js'
 import { pageWidthPx } from './formGrid.js'
 import { anchorFindings, findingLineNo } from './findingLocation.js'
 import { shouldRenderFacsimile } from './pageRender.js'
@@ -113,9 +115,9 @@ export function App({ options = {} }) {
   // filing's form_version. Falls back to the latest revision before a doc loads.
   const formVersion = resolveFormVersion(doc, template)
   const pages = useMemo(
-    () => splitCombinedPages(pagesForVersion(template, formVersion)), [template, formVersion])
+    () => includeFiledSchedules(splitCombinedPages(pagesForVersion(template, formVersion)), doc?.schedules, doc?.legacy_schedules), [template, formVersion, doc])
   const dataSchedules = useMemo(
-    () => new Set(Object.keys(doc?.schedules || {})), [doc])
+    () => new Set([...Object.keys(doc?.schedules || {}), ...Object.keys(doc?.legacy_schedules || {})]), [doc])
 
   // Every schedule that filed explanatory notes gets its OWN side-nav tab + page:
   // a synthetic "Explanatory notes" page inserted right after that schedule's last
@@ -186,7 +188,8 @@ export function App({ options = {} }) {
     return <><FilledPanel page={p} doc={doc} width={pageWidthPx(p)} />
       {shouldRenderFacsimile(p) && <FormFacsimile page={p} schedule={doc.schedules?.[id]}
         scheduleId={id} envelope={doc.envelope} panelIndex={p.comparisonPanel}
-        findingsByLine={anchorFindings(findings, id, doc).byLine} />}</>
+        findingsByLine={anchorFindings(findings, id, doc).byLine} />}
+      <FiledDetails page={p} pages={navPages} doc={doc} /></>
   }
 
   function renderComparedFindings(p) {
@@ -258,6 +261,7 @@ export function App({ options = {} }) {
                       findingsByLine={anchored.byLine}
                     />
                   )}
+                  {page && doc && <FiledDetails page={page} pages={navPages} doc={doc} />}
                 </>
               )}
             </div>

@@ -25,9 +25,26 @@ includes:
 - static template markers such as `N/A` and `XXXXXX`, including schedule `710`
   continuation rows.
 
-Column mapping is driven by generated `columnSpec.json` metadata plus header
-tokens from the extracted template. Nested JSON paths use dotted keys, for
-example `owned_and_used.depreciation_base_beginning_of_year`.
+Column mapping uses reviewed printed-letter contracts in `formColumnContracts.js`,
+with generated `columnSpec.json` metadata and header tokens for remaining bands.
+Nested JSON paths use dotted keys, for example
+`owned_and_used.depreciation_base_beginning_of_year`.
+
+Schedule A's omission list and Schedule C's holder table have explicit mappings;
+narrative answers wrap. **Additional filed data** below each schedule preserves
+populated fields that could not be placed on the form, including zeroes, notes,
+overflow and conflicting records. It covers the whole schedule in either view.
+Schedules absent from the template and retained legacy tables remain reachable
+through separately labeled navigation entries.
+
+The 2026-09-14 pipeline audit checked 301 versions / 61 canonical schedules plus
+retained Schedule 250. All populated schedule fields were accessible; this does
+not certify extraction accuracy or exact printed-cell placement. The current
+Excel-derived template has 109 panels versus 113 physical pages in the July 2026
+PDF: three notes pages and two PTC 410 grid pages need template reconciliation,
+and the 501/502 split introduces an extra header fragment. Unplaced data remains
+available below the form. See the pipeline's
+`docs/visualizer-display-audit-2026-09.md` for the evidence and per-schedule results.
 
 ## Run locally
 
@@ -96,6 +113,20 @@ npm run build
 The build emits `dist/r1-viewer.js` and `dist/r1-viewer.css`. A large bundle
 warning is currently expected because the form template JSON is bundled with
 the app.
+
+To audit populated schedule fields against the same presentation planner and
+additional-data records used by the components, run from this repository root:
+
+```bash
+node scripts/audit-display.mjs /path/to/08_reporting display-audit.json
+```
+
+The report pins the template and input hashes and counts form/panel coverage,
+additional data, and inaccessible fields per schedule. It exits nonzero for
+unreachable schedules or inaccessible fields. `--baseline` measures the former
+mapping without additional-data coverage; it is a conservative gap estimate,
+not a count of incorrect financial cells. The 87 frontend tests include actual
+component output as well as mapping and source-navigation checks.
 
 ## Regenerate the form template
 

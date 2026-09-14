@@ -1,3 +1,4 @@
+import { contractForPanel } from './formColumnContracts.js'
 const FALLBACK_VALUE_KEYS = ['values', 'cells', 'fields', 'measures']
 
 // Non-data content a value cell may carry on the blank form: a "not
@@ -16,6 +17,10 @@ export const tokens = (value) => String(value || '')
   .toLowerCase().split(/[^a-z0-9]+/).filter((token) => token && token.length > 1 && !STOP.has(token))
 
 export function resolveValue(values, keyPath) {
+  if (Array.isArray(keyPath)) {
+    const key = resolvedKey(values, keyPath)
+    return key ? resolveValue(values, key) : undefined
+  }
   if (!values || !keyPath) return undefined
   if (Object.prototype.hasOwnProperty.call(values, keyPath)) return values[keyPath]
 
@@ -26,6 +31,10 @@ export function resolveValue(values, keyPath) {
     current = current[part]
   }
   return current
+}
+
+export function resolvedKey(values, keys) {
+  return Array.isArray(keys) ? keys.find((key) => hasResolvedValue(values, key)) : keys
 }
 
 export function hasResolvedValue(values, keyPath) {
@@ -101,7 +110,7 @@ export function selectBestValues(candidates, keyPaths) {
 // matching the column's header text against the columnSpec key names. This is
 // robust to schedules that stack several sub-tables with different columns on
 // one sheet (e.g. 450), where a single positional rule would misplace values.
-export function analyzeColumns(page, scheduleId, specs = {}) {
+export function analyzeColumns(page, scheduleId, specs = {}, { reviewed = true } = {}) {
   const spec = specs[scheduleId] || {}
   const dataCols = spec.columns || []
 
@@ -210,6 +219,16 @@ export function analyzeColumns(page, scheduleId, specs = {}) {
       rowMaps[ri] = activeMap
     }
   })
+  const contract = reviewed && contractForPanel(page, scheduleId)
+  if (contract) {
+    let ruled = null
+    page.rows.forEach((row, ri) => {
+      const letters = row.cells.map((c) => [c.c, String(c.t || '').trim().match(/^\(([a-z])\)$/)?.[1]])
+        .filter(([, letter]) => letter)
+      if (letters.length >= 2) ruled = new Map(letters.filter(([, letter]) => contract[letter]).map(([col, letter]) => [col, contract[letter]]))
+      if (ruled && isDataRow(row)) rowMaps[ri] = ruled
+    })
+  }
   return { rowMaps, accountCol, lineCol }
 }
 

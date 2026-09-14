@@ -18,6 +18,7 @@ export function pageWidthPx(page) {
 }
 
 export function buildGridPanels(page) {
+  if (!Array.isArray(page?.rows) || !Array.isArray(page?.cols)) return []
   const colBands = inferColumnBands(page)
   const rowBands = inferRowBands(page)
   const panels = []
