@@ -106,6 +106,13 @@ the workbook's manual page breaks had combined. Combined-sheet headers stay
 with their schedules, and bordered captions wrap within their columns.
 Additional filed data keeps values without a mapped form cell accessible.
 
+Source comparison also displays extracted explanatory notes above questionnaire
+panels when their opening question text matches. All notes remain accessible;
+unmatched continuation pages show the whole schedule's notes, clearly labeled.
+Note IDs and list positions are not treated as source-page coordinates. This
+fixes the blank-looking SOO-KCSR 2007 Schedule 200 questionnaire without changing
+the extracted JSON. Regression tests retain the exact filed note text.
+
 Check `formColumnContracts.js`, `formData.js` and `formPresentation.js` when a
 value maps incorrectly. Run `npm test` and `npm run build`; from the repository
 root, `node scripts/audit-display.mjs /path/to/08_reporting display-audit.json`

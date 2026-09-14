@@ -232,8 +232,11 @@
 .r1-note-list { margin: 0; padding-left: 1.35rem; }
 .r1-note { padding: 0.35rem 0; }
 .r1-note + .r1-note { border-top: 1px solid #ddd; }
-.r1-note p { margin: 0.2rem 0 0; white-space: pre-wrap; }
+.r1-note p { margin: 0.2rem 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .r1-note-id { font-weight: 700; }
+.r1-compared-notes { margin-bottom: 1rem; }
+.r1-compared-notes > p, .r1-compared-notes details > p { font-size: .85rem; }
+.r1-compared-notes summary { cursor: pointer; font-weight: 700; padding: .5rem 0; }
 .r1-muted { color: var(--r1-muted); }
 
 /* Misc */

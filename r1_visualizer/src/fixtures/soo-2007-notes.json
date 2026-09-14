@@ -1,0 +1,40 @@
+{
+  "source_filing": "SOO-KCSR 2007 v1",
+  "source_pdf_sha256": "15ad2d11a1065d932474359099dc9e51419fc2a2a78a8e268b1d6d3d3310f8bf",
+  "source_pdf_page": 12,
+  "scope": "Exact first eight explanatory note blocks from extracted JSON; no manual correction. Source page 12 holds questions 1-6; question 6 retains the next page header from extraction.",
+  "explanatory_notes": [
+    {
+      "note_id": "N1",
+      "text": "Amount (estimated, if necessary) of net income or retained income which has to be provided for capital expenditures, and for sinking funds, pursuant to provisions of reorganization plans, mortgages, deeds of trust, or other contracts $ N/A"
+    },
+    {
+      "note_id": "N2",
+      "text": "Estimated amount of future earnings which can be realized before paying Federal income taxes because of unused and available net operating loss carryover on January 1 of the year following that for which the report is made: See Schedule 450 Footnotes, Page 64."
+    },
+    {
+      "note_id": "N3",
+      "text": "(a) Explain the procedure in accounting for pension funds and recording in the accounts the current and past service pension costs, indicating whether or not consistent with the prior year: See Note 11 on Pages 9, 10 and 11. (b) State amount, if any, representing the excess of the actuarially computed value of vested benefits over the total of the pension fund See Note 11 on Pages 9, 10 and 11. (c) Is any part of pension plan funded? Specify: Yes X No (i) If funding is by insurance, give name of insuring company N/A If funding is by trust agent, list trustee(s) U.S. Bank National Association Date of trust agreement or latest amendment A. February 17, 1988; B. February 6, 1996 If respondent is affiliated in any way with the trustee(s), explain affiliation N/A (d) List affiliated companies which are included in the pension plan funding agreement and describe basis for allocating charges under the agreement. A. Delaware & Hudson Railway Company, common affiliate, is charged the increased proportional costs of including its respective employees in the pension plan. (e) (i) Is any part of the pension plan fund invested in stock or other securities of the respondent or any of its affiliates? Specify Yes No X If yes, give number of the shares for each class of stock or other security N/A (ii) Are voting rights attached to any securities held by the pension plan? Specify. Yes X No If yes, who determines how stock is voted? Investment Manager"
+    },
+    {
+      "note_id": "N4",
+      "text": "State whether a segregated political fund has been established as provided by the Federal Election Campaign Act of 1971 (18 U.S.C. 610): Yes No X"
+    },
+    {
+      "note_id": "N5",
+      "text": "(a) The amount of employers contribution to employee stock ownership plans for the current year was: $ 853 (b) The amount of investment tax credit used to reduce current income tax expense resulting from contributions to qualified employee stock ownership plans for the current year was: $ N/A"
+    },
+    {
+      "note_id": "N6",
+      "text": "In reference to Docket No. 37465, specify the total amount of business entertainment expenditures charged to the non-operating expense account $ N/A 8 Road Initials: SOO Year: 2007"
+    },
+    {
+      "note_id": "N7",
+      "text": "Give particulars with respect to contingent assets and liabilities at the close of the year, in accordance with instructions 5-6 in the Uniform System of Accounts for Railroad Companies, that are not reflected in the amounts of the respondent Disclose the nature and amount of contingency that is material. Examples of contingent liabilities are items which may become obligations as a result of pending or threatened litigation, assessments or possible assessments of additional taxes and agreements or obligations to repurchase securities or property. Additional pages may be added if more space is needed. (Explain and/or reference to the following pages.) See Footnote 9 on Page 9. (a) Changes in Valuation Accounts. N/A"
+    },
+    {
+      "note_id": "N8",
+      "text": "Marketable Equity Securities. N/A Cost Market Dr (Cr) to Income Dr (Cr) to Stockholders Equity (Current Yr.) Current Portfolio None N/A as of / / Noncurrent Portfolio N/A $ None (Previous Yr.) Current Portfolio N/A N/A as of / / Noncurrent Portfolio N/A N/A (b) At 12/31/07, gross unrealized gains and losses pertaining to marketable equity securities were as follows: Gains Losses Current $ - $ - Noncurrent - - (c) A net unrealized gain (loss) of $ - on the sale of marketable equity securities was included in net income for (year). The cost of securities was based on the - (method) cost of all the shares of each security held at time of sale. Significant net realized and net unrealized gains and losses arising after date of the financial statements but prior to the filing, applicable to marketable equity securities owned at balance sheet date shall be disclosed below: NOTE: / / (date) Balance sheet date of reported year unless specified as previous year. Road Initials: SOO Year 2007 9"
+    }
+  ]
+}

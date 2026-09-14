@@ -3,6 +3,7 @@ import { createStaticSource } from './dataSource.js'
 import { initialSubmission, resolveConfig } from './config.js'
 import { FormFacsimile, findingRowId } from './FormFacsimile.jsx'
 import { FilledPanel, NotesPanel } from './FilledPanel.jsx'
+import { ComparedNotes } from './ComparedNotes.jsx'
 import { FiledDetails } from './FiledDetails.jsx'
 import { includeFiledSchedules } from './filedDetails.js'
 import { pageWidthPx } from './formGrid.js'
@@ -188,7 +189,8 @@ export function App({ options = {} }) {
     const id = primaryScheduleIdForPage(p)
     const findings = findingsForPage(reviewFindings, sel, p)
     if (p.notesFor) return <NotesPanel id={p.notesFor} schedule={doc.schedules?.[p.notesFor]} />
-    return <><FilledPanel page={p} doc={doc} width={pageWidthPx(p)} />
+    return <><ComparedNotes page={p} id={id} schedule={doc.schedules?.[id]} />
+      <FilledPanel page={p} doc={doc} width={pageWidthPx(p)} />
       {shouldRenderFacsimile(p) && <FormFacsimile page={p} schedule={doc.schedules?.[id]}
         scheduleId={id} envelope={doc.envelope} panelIndex={p.comparisonPanel}
         findingsByLine={anchorFindings(findings, id, doc).byLine} />}

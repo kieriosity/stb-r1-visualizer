@@ -4,17 +4,18 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import { splitCombinedPages } from './pageSchedules.js'
 import { includeFiledSchedules } from './filedDetails.js'
+import { pagesForVersion } from './formVersion.js'
 
 // Execute the actual JSX components in a single-render harness. Memoization is
 // bypassed, not presentation logic. This catches wiring omissions which a
 // planner-only audit cannot (missing FiledDetails, ignored filedValue, etc.).
-const compiled = await build({stdin:{contents:"export { FormFacsimile } from './src/FormFacsimile.jsx'; export { FiledDetails } from './src/FiledDetails.jsx';",resolveDir:process.cwd()},
+const compiled = await build({stdin:{contents:"export { FormFacsimile } from './src/FormFacsimile.jsx'; export { FiledDetails } from './src/FiledDetails.jsx'; export { ComparedNotes } from './src/ComparedNotes.jsx';",resolveDir:process.cwd()},
   bundle:true,write:false,format:'esm',platform:'node',jsx:'automatic',jsxImportSource:'preact',
   plugins:[{name:'single-render-memo',setup(b){
     b.onResolve({filter:/^preact\/hooks$/},()=>({path:'hooks',namespace:'memo'}))
     b.onLoad({filter:/.*/,namespace:'memo'},()=>({contents:'export const useMemo = (fn) => fn();'}))
   }}]})
-const { FormFacsimile, FiledDetails } = await import('data:text/javascript;base64,'+Buffer.from(compiled.outputFiles[0].text).toString('base64'))
+const { FormFacsimile, FiledDetails, ComparedNotes } = await import('data:text/javascript;base64,'+Buffer.from(compiled.outputFiles[0].text).toString('base64'))
 const template=JSON.parse(fs.readFileSync(new URL('./formTemplate.json',import.meta.url)))
 const pages=splitCombinedPages(template.pages)
 function expand(node,out=[]) {
@@ -58,4 +59,32 @@ test('retained legacy tables remain distinct and show every raw cell',()=>{
   const nodes=expand(FiledDetails({page,pages:all,doc}))
   for(const text of ['Item','Begin','End','Investment','10','20']) assert.ok(nodes.some(n=>n.text===text))
   assert.equal(nodes.filter(n=>n.type==='tr'&&n.props['data-field-path']).length,6)
+})
+
+test('comparison renders SOO notes above the questionnaire with exact text and original JSON pointers', () => {
+  const schedule = JSON.parse(fs.readFileSync(new URL('./fixtures/soo-2007-notes.json', import.meta.url)))
+  const page = { ...pagesForVersion(template, '2015-08-31').find(p => p.schedule === '200'), comparisonPanel: 2 }
+  const tree = ComparedNotes({ page, schedule, id: '200' })
+  const nodes = expand(tree)
+  const details = nodes.find(n => n.type === 'details')
+  const inline = nodes.slice(0, nodes.indexOf(details))
+  for (let i = 0; i < 6; i++) {
+    assert.ok(inline.some(n => n.text === schedule.explanatory_notes[i].text))
+    assert.ok(inline.some(n => n.props?.['data-field-path'] === `/explanatory_notes/${i}/text`))
+  }
+  assert.ok(!inline.some(n => n.text === schedule.explanatory_notes[6].text))
+  for (const note of schedule.explanatory_notes) assert.ok(expand(details).some(n => n.text === note.text))
+  const app = fs.readFileSync(new URL('./App.jsx', import.meta.url), 'utf8')
+  assert.match(app, /<ComparedNotes page=\{p\} id=\{id\} schedule=\{doc.schedules\?\.\[id\]\}/)
+})
+
+test('unmatched continuation pages show all notes, preserving duplicate IDs and literal markup', () => {
+  const schedule = { explanatory_notes: [{ note_id: 'N10', text: '<script>literal filed text</script>' },
+    { note_id: 'N10', text: 'Continued disclosure' }] }
+  const page = { ...pagesForVersion(template, '2015-08-31').find(p => p.schedule === '200'), comparisonPanel: 4 }
+  const nodes = expand(ComparedNotes({ page, schedule, id: '200' }))
+  assert.ok(!nodes.some(n => n.type === 'details' || n.type === 'script'))
+  assert.equal(nodes.filter(n => n.props?.['data-field-path']).length, 2)
+  for (const note of schedule.explanatory_notes) assert.ok(nodes.some(n => n.text === note.text))
+  assert.equal(ComparedNotes({ page, id: '200', schedule: {} }), null)
 })

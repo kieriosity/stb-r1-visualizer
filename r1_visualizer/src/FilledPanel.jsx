@@ -315,15 +315,16 @@ function ItemsPanel({ id, schedule }) {
   )
 }
 
-export function NotesPanel({ id, schedule }) {
-  const notes = schedule?.explanatory_notes || []
+export function NotesPanel({ id, schedule, indexes }) {
+  const notes = (schedule?.explanatory_notes || []).map((note, index) => ({ note, index }))
+    .filter(({ index }) => !indexes || indexes.includes(index))
   if (!notes.length) return null
   return (
     <section class="r1-filled">
       <h3 class="r1-filled-head">Schedule {id} — explanatory notes filed</h3>
       <ol class="r1-note-list">
-        {notes.map((note) => (
-          <li class="r1-note">
+        {notes.map(({ note, index }) => (
+          <li class="r1-note" key={index} data-field-path={`/explanatory_notes/${index}/text`}>
             <span class="r1-note-id">Note {note.note_id}</span>
             <p>{note.text}</p>
           </li>

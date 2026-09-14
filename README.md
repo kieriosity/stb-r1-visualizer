@@ -78,7 +78,12 @@ Pairing starts from page order within the schedule. A manual selection becomes
 the starting point for subsequent paired navigation; turn off **Page together**
 to retain manual selection within that schedule. If the source and form have
 different page counts, navigation stops at the first/last extracted page without
-wrapping. Explanatory notes remain manually selectable. Schedule lineage does
+wrapping. The separate explanatory-notes view remains manually selectable.
+On questionnaire pages, filed note blocks whose opening question text matches
+the selected form panel now appear above the blank reference form. Other notes
+remain available under **All filed explanatory notes**; continuation pages with
+no text match show all schedule notes with an explicit scope label. This is a
+text association, not a verified PDF-page coordinate. Schedule lineage does
 not prove page correspondence or identify exact rows or image regions. An unmapped
 source page clears the extraction pane. Amendments and OCR correction pages are
 explicitly labeled.
@@ -126,7 +131,7 @@ The report pins the template and input hashes and counts form/panel coverage,
 additional data, and inaccessible fields per schedule. It exits nonzero for
 unreachable schedules or inaccessible fields. `--baseline` measures the former
 mapping without additional-data coverage; it is a conservative gap estimate,
-not a count of incorrect financial cells. The 94 frontend tests include actual
+not a count of incorrect financial cells. The 100 frontend tests include actual
 component output as well as mapping and source-navigation checks.
 
 ## Regenerate the form template
