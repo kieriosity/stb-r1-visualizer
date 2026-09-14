@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { pageWidthPx } from './formGrid.js'
-import { extractedPagesForSource, initialSourcePage, selectedExtractedPage, sourceReviewUrl } from './sourceReview.js'
+import { extractedPagesForSource, initialSourcePage, linkedExtractedPage, selectedExtractedPage, sourceReviewUrl } from './sourceReview.js'
 
 function Zoom({ label, value, onChange }) {
   return <label>{label}<select value={value} onChange={(e) => onChange(Number(e.currentTarget.value))}>
@@ -11,8 +11,9 @@ function Zoom({ label, value, onChange }) {
 export function SourceComparison({ base, sel, navPages, scheduleId, renderPage, renderFindings, close }) {
   const [manifest, setManifest] = useState(null)
   const [error, setError] = useState(null)
-  const [pageNo, setPageNo] = useState(1)
-  const [selected, setSelected] = useState(null)
+  const [selection, setSelection] = useState({ page: 1, index: null })
+  const [pageTogether, setPageTogether] = useState(true)
+  const pageNo = selection.page
   const [sourceZoom, setSourceZoom] = useState(1)
   const [extractZoom, setExtractZoom] = useState(1)
   const [failedImage, setFailedImage] = useState(null)
@@ -36,7 +37,7 @@ export function SourceComparison({ base, sel, navPages, scheduleId, renderPage, 
         if (controller.signal.aborted) return
         setManifest(value)
         const requested = new URLSearchParams(window.location.search).get('sourcePage')
-        setPageNo(initialSourcePage(value, scheduleId, requested))
+        setSelection({ page: initialSourcePage(value, scheduleId, requested), index: null })
       })
       .catch((e) => { if (!controller.signal.aborted) setError(e.message) })
     return () => controller.abort()
@@ -44,7 +45,16 @@ export function SourceComparison({ base, sel, navPages, scheduleId, renderPage, 
 
   const sourcePage = manifest?.pages.find((p) => p.page === pageNo)
   const choices = useMemo(() => extractedPagesForSource(navPages, sourcePage), [navPages, sourcePage])
-  const chosen = selectedExtractedPage(choices, selected)
+  const chosen = choices.find((p) => p.index === selection.index)
+    || (pageTogether ? linkedExtractedPage(choices, manifest, sourcePage) : selectedExtractedPage(choices, null))
+  function navigateTo(nextPage) {
+    const nextSource = manifest.pages.find((p) => p.page === nextPage)
+    const nextChoices = extractedPagesForSource(navPages, nextSource)
+    const next = pageTogether
+      ? linkedExtractedPage(nextChoices, manifest, nextSource, { sourcePage, chosen })
+      : selectedExtractedPage(nextChoices, chosen?.index)
+    setSelection({ page: nextPage, index: next?.index ?? null })
+  }
   const imageUrl = manifest ? `${url}/${pageNo}.png?binding=${encodeURIComponent(manifest.binding)}` : null
   const imageReady = imageUrl !== null && loadedImage === imageUrl
   const imageFailed = imageUrl !== null && failedImage === imageUrl
@@ -66,12 +76,14 @@ export function SourceComparison({ base, sel, navPages, scheduleId, renderPage, 
       <button type="button" onClick={close}>← Form view</button>
       <strong>Source comparison</strong>
       {manifest && <>
-        <button type="button" disabled={pageNo <= 1} onClick={() => setPageNo(pageNo - 1)}>Previous page</button>
-        <label>Source page<select value={pageNo} onChange={(e) => setPageNo(Number(e.currentTarget.value))}>
+        <button type="button" disabled={pageNo <= 1} onClick={() => navigateTo(pageNo - 1)}>Previous page</button>
+        <label>Source page<select value={pageNo} onChange={(e) => navigateTo(Number(e.currentTarget.value))}>
           {manifest.pages.map((p) => <option value={p.page}>Page {p.page}{p.schedules.length ? ` · ${p.schedules.join(', ')}` : ' · no link'}</option>)}
         </select></label>
         <span>of {manifest.page_count}</span>
-        <button type="button" disabled={pageNo >= manifest.page_count} onClick={() => setPageNo(pageNo + 1)}>Next page</button>
+        <button type="button" disabled={pageNo >= manifest.page_count} onClick={() => navigateTo(pageNo + 1)}>Next page</button>
+        <label><input type="checkbox" checked={pageTogether}
+          onChange={(e) => setPageTogether(e.currentTarget.checked)} /> Page together</label>
       </>}
     </div>
     {error && <div class="r1-compare-empty" role="alert">{error}</div>}
@@ -79,7 +91,9 @@ export function SourceComparison({ base, sel, navPages, scheduleId, renderPage, 
     {manifest && <>
       <div class="r1-compare-context">
         <span title={`SHA-256: ${manifest.input_sha256}`}>{manifest.input_file.split('/').pop()} · original PDF</span>
-        <span>Schedule-level association; extracted page selection is manual where several pages match.</span>
+        <span>{pageTogether
+          ? 'Pages advance together within each linked schedule. Pairing follows page order; adjust the extracted page if needed.'
+          : 'Schedule-level association; select the extracted page manually.'}</span>
         {manifest.is_amendment && <span>Amendment: links describe this run’s source. Retained content may come from an earlier version.</span>}
       </div>
       <div class="r1-compare-panes">
@@ -99,7 +113,7 @@ export function SourceComparison({ base, sel, navPages, scheduleId, renderPage, 
           <div class="r1-compare-pane-head"><strong>Extracted form</strong>
             <Zoom label="Extract zoom" value={extractZoom} onChange={setExtractZoom} /></div>
           {choices.length > 0 && <label class="r1-extract-picker">Associated extracted page
-            <select value={chosen.index} onChange={(e) => setSelected(Number(e.currentTarget.value))}>
+            <select value={chosen.index} onChange={(e) => setSelection({ page: pageNo, index: Number(e.currentTarget.value) })}>
               {choices.map(({ page, index }) => <option value={index}>{page.notesFor ? `${page.notesFor} · Explanatory notes` : page.comparisonLabel}</option>)}
             </select></label>}
           <div class="r1-extract-viewport" ref={viewport}>

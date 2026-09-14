@@ -29,3 +29,28 @@ export function extractedPagesForSource(navPages, sourcePage) {
 export function selectedExtractedPage(choices, selected) {
   return choices.find((p) => p.index === selected) || choices[0] || null
 }
+
+// This is a navigation aid, not evidence of page-level correspondence. The log
+// only links schedules. Start with source order, then preserve a user's pairing
+// by advancing relative to the currently selected form page within that schedule.
+export function linkedExtractedPage(choices, manifest, sourcePage, previous = null) {
+  if (!choices.length) return null
+  const ids = sourcePage?.schedules || []
+  const forms = choices.filter(({ page }) => !page.notesFor)
+  const available = forms.length ? forms : choices
+  const continued = ids.find((id) => previous?.sourcePage?.schedules.includes(id)
+    && pageMatchesSchedule(previous.chosen?.page, id)
+    && available.some(({ page }) => pageMatchesSchedule(page, id)))
+  const schedule = continued || ids.find((id) => available.some(({ page }) => pageMatchesSchedule(page, id)))
+  const group = available.filter(({ page }) => pageMatchesSchedule(page, schedule))
+  if (!group.length) return available[0]
+  const sourcePages = manifest.pages.filter((p) => p.schedules.includes(schedule))
+    .map((p) => p.page).sort((a, b) => a - b)
+  let position = sourcePages.indexOf(sourcePage.page)
+  const previousSource = sourcePages.indexOf(previous?.sourcePage?.page)
+  const previousForm = group.findIndex((p) => p.index === previous?.chosen?.index)
+  if (continued && previousSource >= 0 && previousForm >= 0) {
+    position = previousForm + position - previousSource
+  }
+  return group[Math.max(0, Math.min(position, group.length - 1))]
+}

@@ -52,11 +52,18 @@ http://localhost:5173/?sched=710
 When the host supplies `data-source-base`, **Compare source pages** opens the
 original PDF beside the extracted form. The source endpoint is provided by the
 pipeline's steward and standalone servers. Previous/Next and a page selector
-navigate physical PDF pages; each pane has independent zoom and scrolling.
+navigate physical PDF pages. **Page together** is enabled by default: the
+extraction advances through the associated schedule's printed pages with the PDF.
+Each pane still has independent zoom and scrolling.
 The right selector lists form pages associated with the source page's schedules.
-Where multiple extracted pages match, selection is manual: schedule lineage does
-not identify exact rows or image regions. An unmapped source page clears the
-extraction pane. Amendments and OCR correction pages are explicitly labeled.
+Pairing starts from page order within the schedule. A manual selection becomes
+the starting point for subsequent paired navigation; turn off **Page together**
+to retain manual selection within that schedule. If the source and form have
+different page counts, navigation stops at the first/last extracted page without
+wrapping. Explanatory notes remain manually selectable. Schedule lineage does
+not prove page correspondence or identify exact rows or image regions. An unmapped
+source page clears the extraction pane. Amendments and OCR correction pages are
+explicitly labeled.
 
 Append `sourcePage=124` to a filing URL to open comparison at that PDF page.
 Source requests include the filing version and bind image requests to the
