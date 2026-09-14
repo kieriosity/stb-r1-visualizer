@@ -40,10 +40,11 @@ through separately labeled navigation entries.
 The 2026-09-14 pipeline audit checked 301 versions / 61 canonical schedules plus
 retained Schedule 250. All populated schedule fields were accessible; this does
 not certify extraction accuracy or exact printed-cell placement. The current
-Excel-derived template has 109 panels versus 113 physical pages in the July 2026
-PDF: three notes pages and two PTC 410 grid pages need template reconciliation,
-and the 501/502 split introduces an extra header fragment. Unplaced data remains
-available below the form. See the pipeline's
+Excel-derived template now has 113 panels matching the July 2026 PDF's page
+boundaries. Missing workbook page breaks had combined existing notes and PTC
+continuation grids; no source content needed to be recreated. Combined-sheet
+headers now stay with their own schedules. Unplaced data remains available below
+the form. See the pipeline's
 `docs/visualizer-display-audit-2026-09.md` for the evidence and per-schedule results.
 
 ## Run locally
@@ -125,7 +126,7 @@ The report pins the template and input hashes and counts form/panel coverage,
 additional data, and inaccessible fields per schedule. It exits nonzero for
 unreachable schedules or inaccessible fields. `--baseline` measures the former
 mapping without additional-data coverage; it is a conservative gap estimate,
-not a count of incorrect financial cells. The 87 frontend tests include actual
+not a count of incorrect financial cells. The 94 frontend tests include actual
 component output as well as mapping and source-navigation checks.
 
 ## Regenerate the form template
@@ -139,6 +140,15 @@ python scripts/gen-form-template.py
 This updates `r1_visualizer/src/formTemplate.json`. The extractor preserves
 cell borders, widths, fonts, spans, text rotation, and Excel display text used
 by the visualizer.
+
+`scripts/form-page-boundaries.json` records PDF-reviewed corrections to missing
+manual workbook page breaks and pins both source hashes. A changed source
+requires another review before those coordinates can be reused. Run the offline
+generator regressions with `python -m unittest discover -s scripts -p test_form_template.py`.
+Regeneration is byte-identical on the pinned inputs. A headless Chromium check
+also covers the real steward UI: paired pages, zoom, scrolling, supplemental data,
+and exact filing selection. Lowercase carrier links work; an unavailable filing
+shows an error instead of silently selecting another filing.
 
 ## WordPress deployment
 

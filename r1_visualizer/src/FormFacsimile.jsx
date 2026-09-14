@@ -67,6 +67,9 @@ export function FormFacsimile({ page, schedule, scheduleId, envelope, findingsBy
                       const isValue = cell.valueColumn || cell.fieldPointer
                       const value = cell.filedValue
                       if (value != null && value !== '') text = formatValue(value)
+                      // A bordered column cannot spill into its neighbor. Some
+                      // workbook headers omit wrap_text despite long captions.
+                      const wraps = cell.w || cell.fieldPointer || (cell.bd?.includes('l') && cell.bd?.includes('r'))
                       const style = {
                         ...borderStyle(cell.bd),
                         textAlign: cell.tr === 180 ? 'center' : (typeof value === 'number' ? 'right' : (ALIGN[cell.ha] || 'left')),
@@ -75,11 +78,11 @@ export function FormFacsimile({ page, schedule, scheduleId, envelope, findingsBy
                         fontSize: cell.sz ? `${cell.sz / 7 * 100}%` : undefined,
                         writingMode: cell.tr === 180 ? 'vertical-rl' : undefined,
                         textOrientation: cell.tr === 180 ? 'upright' : undefined,
-                        whiteSpace: (cell.w || cell.fieldPointer) ? 'normal' : 'nowrap',
+                        whiteSpace: wraps ? 'normal' : 'nowrap',
                         overflowWrap: cell.fieldPointer ? 'anywhere' : undefined,
                         // Like Excel, let a non-wrapped label spill into the empty
                         // cells beside it; value cells and wrapped cells stay clipped.
-                        overflow: (cell.w || isValue) ? 'hidden' : 'visible',
+                        overflow: (wraps || isValue) ? 'hidden' : 'visible',
                       }
                       return (
                         <td colSpan={cell.span > 1 ? cell.span : undefined} style={style}

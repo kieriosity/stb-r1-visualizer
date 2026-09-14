@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'preact/hooks'
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { createStaticSource } from './dataSource.js'
-import { resolveConfig } from './config.js'
+import { initialSubmission, resolveConfig } from './config.js'
 import { FormFacsimile, findingRowId } from './FormFacsimile.jsx'
 import { FilledPanel, NotesPanel } from './FilledPanel.jsx'
 import { FiledDetails } from './FiledDetails.jsx'
@@ -32,10 +32,16 @@ export function App({ options = {} }) {
   const [reviewFindings, setReviewFindings] = useState([])
   const [lineage, setLineage] = useState(null)
   const [activePage, setActivePage] = useState(0)
+  const documentViewport = useRef(null)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
   const [compareSource, setCompareSource] = useState(() => Boolean(config.sourceBase &&
     typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('sourcePage')))
+
+  useEffect(() => {
+    documentViewport.current?.scrollTo(0, 0)
+    documentViewport.current?.querySelector('.r1-fac-wrap')?.scrollTo(0, 0)
+  }, [activePage, sel?.file])
 
   // Load manifest once.
   useEffect(() => {
@@ -43,12 +49,9 @@ export function App({ options = {} }) {
       .then((list) => {
         setSubs(list)
         if (list.length) {
-          const want = list.filter((s) =>
-            (!options.carrier || s.carrier === options.carrier) &&
-            (!options.year || s.year === Number(options.year)) &&
-            (!options.version || s.version === Number(options.version)))
-          const pick = (want.length ? want : list)[want.length ? want.length - 1 : list.length - 1]
+          const pick = initialSubmission(list, options)
           setSel(pick)
+          if (!pick) setError('No submission matches the requested carrier, year and version. Check the filing link.')
         }
       })
       .catch((e) => setError(`Could not load manifest: ${e.message}`))
@@ -244,7 +247,7 @@ export function App({ options = {} }) {
               })}
             </ul>
           </nav>
-          <main class="r1-main">
+          <main class="r1-main" ref={documentViewport}>
             {loading && <div class="r1-loading">Loading…</div>}
             <div class="r1-doc">
               {page?.notesFor ? (

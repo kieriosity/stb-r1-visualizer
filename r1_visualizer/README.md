@@ -100,9 +100,11 @@ Styles are scoped under `.r1-app` to avoid clashing with the host theme.
 ## Refining form fidelity
 
 Static labels and formatting come from the workbook. The current template has
-109 panels versus 113 pages in the July 2026 PDF; three notes pages, two PTC 410
-grid pages and the 501/502 header split still require reconciliation. Additional
-filed data keeps unplaced values accessible while those layout gaps remain.
+113 panels matching the July 2026 PDF's page boundaries. The generator's reviewed
+boundary manifest separates existing notes and PTC 410 continuation grids that
+the workbook's manual page breaks had combined. Combined-sheet headers stay
+with their schedules, and bordered captions wrap within their columns.
+Additional filed data keeps values without a mapped form cell accessible.
 
 Check `formColumnContracts.js`, `formData.js` and `formPresentation.js` when a
 value maps incorrectly. Run `npm test` and `npm run build`; from the repository

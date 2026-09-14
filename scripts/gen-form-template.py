@@ -9,12 +9,14 @@ Run:
 Writes r1_visualizer/src/formTemplate.json
 """
 import json, re, os, datetime
+import hashlib
 from pathlib import Path
 
 import openpyxl
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / 'r1_visualizer' / 'src' / 'formTemplate.json'
+BOUNDARIES = Path(__file__).with_name('form-page-boundaries.json')
 
 # The STB renumbered Schedule 200 (and revised 210, added 210A) between these
 # revisions, so the facsimile is generated per form version and the viewer renders
@@ -48,6 +50,22 @@ def sheet_schedules(name):
     return ids
 
 
+def _banner_page_start(grid, idx):
+    """Keep an immediately preceding printed page header with its banner.
+
+    Some combined sheets break before Road Initials / Year / page number, one
+    row before the schedule title. Splitting at the title strands a one-row
+    panel on the preceding schedule. Never pull data or instructions across.
+    """
+    start = max((b for b in grid.get('rowBreaks', []) if 0 < b <= idx and idx - b <= 2), default=idx)
+    texts = [str(c['t']).strip() for row in grid['rows'][start:idx]
+             for c in row['cells'] if str(c.get('t', '')).strip()]
+    if texts and any(t.lower().startswith('road') for t in texts) and all(
+            t.lower().startswith(('road', 'year')) or t.isdigit() for t in texts):
+        return start
+    return idx
+
+
 def _split_combined(grid, ids):
     """Split a combined sheet's grid into one page per schedule, sliced at each
     schedule's '<id>.' banner row. Ids without a banner in the grid are dropped."""
@@ -59,7 +77,7 @@ def _split_combined(grid, ids):
                     if any(isinstance(c.get('t'), str) and pat.match(c['t']) for c in row['cells'])),
                    None)
         if idx is not None:
-            found.append((idx, sid))
+            found.append((_banner_page_start(grid, idx), sid))
     found.sort()
     if len(found) <= 1:                    # nothing to split on; one page as-is
         out = dict(grid)
@@ -118,7 +136,7 @@ def display_text(cell):
     return str(v)
 
 
-def extract_sheet(ws):
+def extract_sheet(ws, breaks_after_rows=None):
     maxc = ws.max_column
     # Trim trailing rows: keep through the last row carrying text.
     last = 0
@@ -178,11 +196,12 @@ def extract_sheet(ws):
             row_numbers.append(r)
 
     row_breaks = []
-    for brk in ws.row_breaks.brk:
+    break_rows = breaks_after_rows if breaks_after_rows is not None else [b.id for b in ws.row_breaks.brk]
+    for break_row in break_rows:
         # openpyxl break IDs are the last Excel row before a manual page break.
         # Store the corresponding zero-based row-array index where the next
         # printed page begins, so renderers do not need original Excel row IDs.
-        idx = next((i for i, row_num in enumerate(row_numbers) if row_num > brk.id), None)
+        idx = next((i for i, row_num in enumerate(row_numbers) if row_num > break_row), None)
         if idx is not None and 0 < idx < len(rows):
             row_breaks.append(idx)
 
@@ -192,14 +211,27 @@ def extract_sheet(ws):
     return grid
 
 
+def reviewed_boundaries(path):
+    review = json.loads(BOUNDARIES.read_text(encoding='utf-8'))
+    if path.name != review['workbook']:
+        return {}
+    for source, digest in [(path, review['workbook_sha256']),
+                           (path.with_name(review['reference_pdf']), review['reference_pdf_sha256'])]:
+        if hashlib.sha256(source.read_bytes()).hexdigest() != digest:
+            raise ValueError(f'Reviewed page-boundary source changed: {source.name}')
+    return review['sheets']
+
+
 def extract_form(path):
     """Ordered list of grid dicts (cols/rows/[rowBreaks]/sheet/schedule) for one
     form, in workbook sheet order. A combined sheet expands to one grid per
     schedule (split at each banner)."""
+    boundaries = reviewed_boundaries(path)
     wb = openpyxl.load_workbook(path, data_only=True)
     grids = []
     for name in wb.sheetnames:
-        grid = extract_sheet(wb[name])
+        reviewed = boundaries.get(name, {}).get('breaks_after_rows')
+        grid = extract_sheet(wb[name], reviewed)
         if grid is None:
             continue
         grid['sheet'] = name
@@ -261,7 +293,7 @@ def main():
             if base is None:
                 legacy_only.setdefault(sched, grid)
                 continue
-            if (grid['cols'], grid['rows']) != (base['cols'], base['rows']):
+            if _grid_body(grid) != _grid_body(base):
                 variants.setdefault(sched, {})[v] = _grid_body(grid)
 
     for sched in sorted(legacy_only, key=_sched_key):
