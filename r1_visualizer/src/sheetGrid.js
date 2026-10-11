@@ -13,12 +13,15 @@ export function columnLetter(index) {
   return out
 }
 
-// Numbers are shown as stored (no rounding), grouped for reading, so they can be
-// compared directly with the extracted values.
+// Numbers are shown as stored (no rounding) so they can be compared directly with
+// the extracted values. Digits are grouped only from 10,000 up, so years, line and
+// account numbers read as filed ("2000", not "2,000").
 export function formatCell(value) {
   if (value === null || value === undefined) return ''
   if (typeof value === 'boolean') return value ? 'TRUE' : 'FALSE'
-  if (typeof value === 'number') return value.toLocaleString('en-US', { maximumFractionDigits: 10 })
+  if (typeof value === 'number') {
+    return value.toLocaleString('en-US', { maximumFractionDigits: 10, useGrouping: Math.abs(value) >= 10000 })
+  }
   return String(value)
 }
 

@@ -11,7 +11,9 @@ test('column letters follow Excel, including past Z', () => {
 
 test('cells show stored values without rounding', () => {
   assert.equal(formatCell(55821.13144), '55,821.13144')
-  assert.equal(formatCell(-1234), '-1,234')
+  assert.equal(formatCell(-1524597), '-1,524,597')
+  assert.equal(formatCell(2000), '2000')          // a year or account number, not money
+  assert.equal(formatCell(708.5), '708.5')
   assert.equal(formatCell(0), '0')
   assert.equal(formatCell(null), '')
   assert.equal(formatCell(true), 'TRUE')

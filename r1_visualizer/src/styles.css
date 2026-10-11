@@ -52,7 +52,10 @@
 .r1-sheet { background: #fff; box-shadow: 0 1px 5px #0003; width: max-content; min-width: 100%; }
 .r1-sheet-note { margin: 0; padding: .35rem .6rem; font-size: .76rem; background: #fff3d6; }
 .r1-sheet-grid { border-collapse: collapse; font-family: Calibri, Arial, sans-serif; font-size: 1em; }
-.r1-sheet-grid td, .r1-sheet-grid th { border: 1px solid #d4d4d4; padding: .1em .4em; white-space: nowrap; height: 1.4em; }
+.r1-sheet-grid td, .r1-sheet-grid th { border: 1px solid #d4d4d4; padding: .1em .4em; white-space: nowrap; height: 1.4em; vertical-align: top; }
+/* Long text wraps inside a capped column, like Excel's wrap text; numbers stay on one line. */
+.r1-sheet-grid td { max-width: 24em; white-space: pre-wrap; overflow-wrap: anywhere; }
+.r1-sheet-grid td.r1-sheet-num { white-space: nowrap; }
 .r1-sheet-grid thead th { position: sticky; top: 0; z-index: 2; background: #eef0f2; color: #555; font-weight: 400; text-align: center; }
 .r1-sheet-grid tbody th { position: sticky; left: 0; z-index: 1; background: #eef0f2; color: #555; font-weight: 400; text-align: right; min-width: 2.5em; }
 .r1-sheet-grid .r1-sheet-corner { left: 0; z-index: 3; }

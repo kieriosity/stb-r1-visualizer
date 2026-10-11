@@ -33,9 +33,15 @@ export function SheetGrid({ base, page, binding, zoom, ranges, onLoad, onFail })
     return () => controller.abort()
   }, [url])
 
+  // Bring the first linked row just below the sticky column letters, scrolling the
+  // source pane vertically only (scrollIntoView would also shift it sideways).
   useEffect(() => {
-    const first = grid.current?.querySelector('tr.r1-sheet-linked')
-    first?.scrollIntoView({ block: 'start' })
+    const row = grid.current?.querySelector('tr.r1-sheet-linked')
+    const viewport = grid.current?.closest('.r1-source-viewport')
+    if (!row || !viewport) return
+    const header = grid.current.querySelector('thead')?.offsetHeight || 0
+    const offset = row.getBoundingClientRect().top - viewport.getBoundingClientRect().top
+    viewport.scrollTop = Math.max(0, viewport.scrollTop + offset - header - 12)
   }, [sheet])
 
   if (error) return <p role="alert">{error} Reopen source comparison to retry.</p>
