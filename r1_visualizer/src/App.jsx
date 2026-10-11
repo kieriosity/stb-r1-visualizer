@@ -210,8 +210,9 @@ export function App({ options = {} }) {
     <div class="r1-app">
       <Picker {...{ carriers, years, versions, sel, pickSub }} lineage={lineage} />
       {(config.sourceBase || config.issuesBase) && !compareSource && <div class="r1-source-action">
-        {config.sourceBase && <><button type="button" disabled={!doc || loading} onClick={() => setCompareSource(true)}>Compare source pages</button>
-          <span>Original PDF beside the extracted form</span></>}
+        {config.sourceBase && <><button type="button" disabled={!doc || loading} onClick={() => setCompareSource(true)}>Compare source</button>
+          <span>{lineage?.source_profile === 'scanned_pdf_ocr' ? 'Original PDF pages'
+            : lineage?.source_profile ? 'Original workbook tabs' : 'Original filing'} beside the extracted form</span></>}
         {config.issuesBase && <><button type="button" disabled={!reportIssue || loading}
           title={!reportIssue ? 'Load a filing on localhost or HTTPS to report an issue.' : undefined}
           onClick={() => reportIssue(page)}>Report issue</button>

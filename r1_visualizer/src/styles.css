@@ -48,6 +48,17 @@
 .r1-source-viewport, .r1-extract-viewport { flex: 1 1 auto; min-height: 0; min-width: 0; overflow: auto; overscroll-behavior: contain; padding: 12px; }
 .r1-source-viewport { background: #d8dce0; }
 .r1-source-viewport img { max-width: none; height: auto; margin: 0; box-shadow: 0 1px 5px #0003; }
+/* Original worksheet tab: Excel-like grid with sticky column letters and row numbers. */
+.r1-sheet { background: #fff; box-shadow: 0 1px 5px #0003; width: max-content; min-width: 100%; }
+.r1-sheet-note { margin: 0; padding: .35rem .6rem; font-size: .76rem; background: #fff3d6; }
+.r1-sheet-grid { border-collapse: collapse; font-family: Calibri, Arial, sans-serif; font-size: 1em; }
+.r1-sheet-grid td, .r1-sheet-grid th { border: 1px solid #d4d4d4; padding: .1em .4em; white-space: nowrap; height: 1.4em; }
+.r1-sheet-grid thead th { position: sticky; top: 0; z-index: 2; background: #eef0f2; color: #555; font-weight: 400; text-align: center; }
+.r1-sheet-grid tbody th { position: sticky; left: 0; z-index: 1; background: #eef0f2; color: #555; font-weight: 400; text-align: right; min-width: 2.5em; }
+.r1-sheet-grid .r1-sheet-corner { left: 0; z-index: 3; }
+.r1-sheet-grid td.r1-sheet-num { text-align: right; font-variant-numeric: tabular-nums; }
+.r1-sheet-grid tr.r1-sheet-linked td { background: #eaf3ff; }
+.r1-sheet-grid tr.r1-sheet-linked th { background: #c9dcf5; color: #1f3864; font-weight: 700; }
 .r1-extract-picker { padding: .4rem .7rem; border-bottom: 1px solid #ddd; flex-wrap: wrap; }
 .r1-extract-picker select { flex: 1 1 auto; min-width: 0; }
 .r1-compare-empty { padding: 1.5rem; max-width: 42rem; color: #454c54; }

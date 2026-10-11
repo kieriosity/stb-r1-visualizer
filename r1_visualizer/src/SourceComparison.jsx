@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { pageWidthPx } from './formGrid.js'
 import { extractedPagesForSource, initialSourcePage, linkedExtractedPage, selectedExtractedPage, sourceReviewUrl } from './sourceReview.js'
+import { SheetGrid } from './SheetGrid.jsx'
+import { isWorkbook, sheetUrl, sourceEntryLabel } from './sheetGrid.js'
 
 function Zoom({ label, value, onChange }) {
   return <label>{label}<select value={value} onChange={(e) => onChange(Number(e.currentTarget.value))}>
@@ -55,7 +57,11 @@ export function SourceComparison({ base, sel, navPages, scheduleId, renderPage, 
       : selectedExtractedPage(nextChoices, chosen?.index)
     setSelection({ page: nextPage, index: next?.index ?? null })
   }
-  const imageUrl = manifest ? `${url}/${pageNo}.png?binding=${encodeURIComponent(manifest.binding)}` : null
+  const workbook = isWorkbook(manifest)
+  const unit = workbook ? 'sheet' : 'page'
+  // A PDF page image or a workbook tab's cell grid; both report load/failure here.
+  const imageUrl = !manifest ? null : workbook ? sheetUrl(url, pageNo, manifest.binding)
+    : `${url}/${pageNo}.png?binding=${encodeURIComponent(manifest.binding)}`
   const imageReady = imageUrl !== null && loadedImage === imageUrl
   const imageFailed = imageUrl !== null && failedImage === imageUrl
   useEffect(() => {
@@ -76,14 +82,14 @@ export function SourceComparison({ base, sel, navPages, scheduleId, renderPage, 
       <button type="button" onClick={close}>← Form view</button>
       <strong>Source comparison</strong>
       {manifest && <>
-        <button type="button" disabled={pageNo <= 1} onClick={() => navigateTo(pageNo - 1)}>Previous page</button>
-        <label>Source page<select value={pageNo} onChange={(e) => navigateTo(Number(e.currentTarget.value))}>
-          {manifest.pages.map((p) => <option value={p.page}>Page {p.page}{p.schedules.length ? ` · ${p.schedules.join(', ')}` : ' · no link'}</option>)}
+        <button type="button" disabled={pageNo <= 1} onClick={() => navigateTo(pageNo - 1)}>Previous {unit}</button>
+        <label>Source {unit}<select value={pageNo} onChange={(e) => navigateTo(Number(e.currentTarget.value))}>
+          {manifest.pages.map((p) => <option value={p.page}>{sourceEntryLabel(manifest, p)}{p.schedules.length ? ` · ${p.schedules.join(', ')}` : ' · no link'}</option>)}
         </select></label>
         <span>of {manifest.page_count}</span>
-        <button type="button" disabled={pageNo >= manifest.page_count} onClick={() => navigateTo(pageNo + 1)}>Next page</button>
+        <button type="button" disabled={pageNo >= manifest.page_count} onClick={() => navigateTo(pageNo + 1)}>Next {unit}</button>
         <label><input type="checkbox" checked={pageTogether}
-          onChange={(e) => setPageTogether(e.currentTarget.checked)} /> Page together</label>
+          onChange={(e) => setPageTogether(e.currentTarget.checked)} /> {workbook ? 'Sheet together' : 'Page together'}</label>
       </>}
       {issuesBase && <><button type="button" disabled={!manifest || !reportIssue}
         title={!reportIssue ? 'Load a filing on localhost or HTTPS to report an issue.' : undefined}
@@ -94,23 +100,25 @@ export function SourceComparison({ base, sel, navPages, scheduleId, renderPage, 
     {!manifest && !error && <div class="r1-loading" role="status">Loading source information…</div>}
     {manifest && <>
       <div class="r1-compare-context">
-        <span title={`SHA-256: ${manifest.input_sha256}`}>{manifest.input_file.split('/').pop()} · original PDF</span>
+        <span title={`SHA-256: ${manifest.input_sha256}`}>{manifest.input_file.split('/').pop()} · original {workbook ? 'workbook' : 'PDF'}</span>
         <span>{pageTogether
-          ? 'Pages advance together within each linked schedule. Pairing follows page order; adjust the extracted page if needed.'
+          ? `${workbook ? 'Tabs' : 'Pages'} advance together within each linked schedule. Pairing follows ${unit} order; adjust the extracted page if needed.`
           : 'Schedule-level association; select the extracted page manually.'}</span>
         {manifest.is_amendment && <span>Amendment: links describe this run’s source. Retained content may come from an earlier version.</span>}
       </div>
       <div class="r1-compare-panes">
         <section class="r1-compare-pane" aria-label="Original source">
-          <div class="r1-compare-pane-head"><strong>Original · PDF page {pageNo}</strong>
+          <div class="r1-compare-pane-head"><strong>Original · {workbook ? `sheet ${sourceEntryLabel(manifest, sourcePage)}` : `PDF page ${pageNo}`}</strong>
             <Zoom label="Source zoom" value={sourceZoom} onChange={setSourceZoom} /></div>
           {manifest.correction_pages.includes(pageNo) && <div class="r1-compare-correction">OCR correction evidence was used for this page. The image below is the original.</div>}
           <div class="r1-source-viewport" ref={sourceViewport}>
+            {workbook ? <SheetGrid base={url} page={pageNo} binding={manifest.binding} zoom={sourceZoom}
+              ranges={sourcePage?.row_ranges} onLoad={setLoadedImage} onFail={setFailedImage} /> : <>
             {!imageReady && !imageFailed && <p role="status">Loading source page…</p>}
             {imageFailed && <p role="alert">The verified source page could not be loaded. Reopen source comparison to retry.</p>}
             <img key={imageUrl} src={imageUrl} alt={`Original ${manifest.input_file.split('/').pop()}, PDF page ${pageNo}`}
               style={{ width: `${sourceZoom * 100}%`, visibility: imageReady ? 'visible' : 'hidden', display: imageFailed ? 'none' : 'block' }}
-              onLoad={() => setLoadedImage(imageUrl)} onError={() => setFailedImage(imageUrl)} />
+              onLoad={() => setLoadedImage(imageUrl)} onError={() => setFailedImage(imageUrl)} /></>}
           </div>
         </section>
         <section class="r1-compare-pane" aria-label="Extracted content">
@@ -125,7 +133,7 @@ export function SourceComparison({ base, sel, navPages, scheduleId, renderPage, 
               {renderPage(chosen.page)}
             </div><details class="r1-compare-findings"><summary>Findings and provenance</summary>{renderFindings(chosen.page)}</details></> :
               <div class="r1-compare-empty"><h3>No extracted page linked</h3>
-                <p>{sourcePage?.schedules.length ? `This source page is associated with ${sourcePage.schedules.join(', ')}, which has no available form page.` : 'The transform log records no schedule association for this source page.'}</p>
+                <p>{sourcePage?.schedules.length ? `This source ${unit} is associated with ${sourcePage.schedules.join(', ')}, which has no available form page.` : `The transform log records no schedule association for this source ${unit}.`}</p>
                 <p>The original remains available for review.</p></div>}
           </div>
         </section>
