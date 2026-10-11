@@ -61,7 +61,14 @@
    "shares_in_treasury",
    "shares_outstanding",
    "book_value_outstanding",
-   "book_value_in_treasury"
+   "book_value_in_treasury",
+   "preferred_stock_shares",
+   "preferred_stock_amount",
+   "common_stock_shares",
+   "common_stock_amount",
+   "treasury_stock_shares",
+   "treasury_stock_amount",
+   "additional_capital"
   ]
  },
  "240": {
@@ -375,7 +382,11 @@
    "nature_of_relationship",
    "description_of_transactions",
    "dollar_amounts_of_transactions",
-   "amount_due_from_or_to_related_parties"
+   "amount_due_from_or_to_related_parties",
+   "dollar_amounts_of_transactions_receivable",
+   "dollar_amounts_of_transactions_payable",
+   "amount_due_from_or_to_related_parties_receivable",
+   "amount_due_from_or_to_related_parties_payable"
   ]
  },
  "700": {

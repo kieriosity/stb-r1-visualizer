@@ -65,3 +65,14 @@ export function findingCountsByPage(pages, findings, selected) {
   }
   return counts
 }
+
+// The side nav marks a schedule page that carries a WARNING or FATAL finding (not
+// only INFO): { [page index]: { count, fatal } }.
+export function warningCountsByPage(pages, findings, selected) {
+  const counts = {}
+  for (const [index, page] of (pages || []).entries()) {
+    const flagged = findingsForPage(findings, selected, page).filter((f) => f.severity === 'WARNING' || f.severity === 'FATAL')
+    if (flagged.length) counts[index] = { count: flagged.length, fatal: flagged.some((f) => f.severity === 'FATAL') }
+  }
+  return counts
+}

@@ -149,3 +149,23 @@ test('indexData keys paginated records by (block, source_line_no)', () => {
   assert.equal(data.byBlockLine.get('0:1')[0].opening_balance, 1445)
   assert.equal(data.byBlockLine.get('1:1')[0].opening_balance, -500)
 })
+
+test('analyzeColumns maps schedule 230 Part I and Part II under their own rulers', () => {
+  // The 2015 form prints Part I (capital stock) above Part II (summary of capital stock
+  // changes); both letter their columns (b)-(h), with different meanings.
+  const template = JSON.parse(fs.readFileSync(new URL('./formTemplate.json', import.meta.url), 'utf8'))
+  const specs = JSON.parse(fs.readFileSync(new URL('./columnSpec.json', import.meta.url), 'utf8'))
+  const page = template.pages.find((p) => p.schedule === '230')
+  const byLine = {}
+  for (const panel of buildGridPanels(page)) {
+    const { rowMaps, lineCol } = analyzeColumns(panel, '230', specs)
+    panel.rows.forEach((row, ri) => {
+      const ln = row.cells.find((c) => c.c === lineCol && /^\d+$/.test(String(c.t || '').trim()))
+      if (ln && rowMaps[ri]?.size) byLine[ln.t.trim()] = [...rowMaps[ri].values()]
+    })
+  }
+  assert.deepEqual(byLine['1'], ['par_value', 'shares_authorized', 'shares_issued', 'shares_in_treasury',
+    'shares_outstanding', 'book_value_outstanding', 'book_value_in_treasury'])
+  assert.deepEqual(byLine['11'], ['preferred_stock_shares', 'preferred_stock_amount', 'common_stock_shares',
+    'common_stock_amount', 'treasury_stock_shares', 'treasury_stock_amount', 'additional_capital'])
+})

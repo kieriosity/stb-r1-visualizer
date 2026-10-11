@@ -221,12 +221,35 @@ export function analyzeColumns(page, scheduleId, specs = {}, { reviewed = true }
   })
   const contract = reviewed && contractForPanel(page, scheduleId)
   if (contract) {
+    // A contract with parts (Schedule 230) picks the part whose header text the rows
+    // just above the ruler print; a plain contract applies under every ruler.
+    const forRuler = (ri) => {
+      if (!Array.isArray(contract)) return contract
+      const above = page.rows.slice(Math.max(0, ri - 3), ri + 1).flatMap((r) => r.cells.map((c) => c.t || '')).join(' ')
+      return (contract.find((part) => part.header.test(above)) || contract[0]).letters
+    }
+    // Under a ruler, line numbers rise; one that restarts with no new ruler is a numbered
+    // instruction list printed below the table (Schedule 230's Part II instructions 1-6
+    // below Part I's lines 1-10), not table lines, so it takes no values.
     let ruled = null
+    let lastLine = 0
     page.rows.forEach((row, ri) => {
       const letters = row.cells.map((c) => [c.c, String(c.t || '').trim().match(/^\(([a-z])\)$/)?.[1]])
         .filter(([, letter]) => letter)
-      if (letters.length >= 2) ruled = new Map(letters.filter(([, letter]) => contract[letter]).map(([col, letter]) => [col, contract[letter]]))
-      if (ruled && isDataRow(row)) rowMaps[ri] = ruled
+      if (letters.length >= 2) {
+        const map = forRuler(ri)
+        ruled = new Map(letters.filter(([, letter]) => map[letter]).map(([col, letter]) => [col, map[letter]]))
+        lastLine = 0
+      }
+      if (ruled && isDataRow(row)) {
+        const line = Number(row.cells.find((c) => c.c === lineCol)?.t)
+        if (line > lastLine) {
+          rowMaps[ri] = ruled
+          lastLine = line
+        } else {
+          rowMaps[ri] = new Map()
+        }
+      }
     })
   }
   return { rowMaps, accountCol, lineCol }

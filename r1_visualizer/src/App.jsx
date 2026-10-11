@@ -10,7 +10,7 @@ import { pageWidthPx } from './formGrid.js'
 import { anchorFindings, findingLineNo } from './findingLocation.js'
 import { shouldRenderFacsimile } from './pageRender.js'
 import { navScheduleLabel, pageHasData, pageMatchesSchedule, primaryScheduleIdForPage, splitCombinedPages } from './pageSchedules.js'
-import { findingCountsByPage, findingsForPage, normalizeReviewFindings } from './reviewFindings.js'
+import { findingCountsByPage, findingsForPage, normalizeReviewFindings, warningCountsByPage } from './reviewFindings.js'
 import { pagesForVersion, resolveFormVersion } from './formVersion.js'
 import { asFiledDeviations, describeFiling, describeSchedule, ocrPageUrl, profileLabel } from './lineage.js'
 import formTemplate from './formTemplate.json'
@@ -184,6 +184,9 @@ export function App({ options = {} }) {
   const findingCounts = useMemo(
     () => findingCountsByPage(navPages, reviewFindings, sel),
     [navPages, reviewFindings, sel])
+  const warningCounts = useMemo(
+    () => warningCountsByPage(navPages, reviewFindings, sel),
+    [navPages, reviewFindings, sel])
 
   function renderComparedPage(p) {
     const id = primaryScheduleIdForPage(p)
@@ -233,17 +236,24 @@ export function App({ options = {} }) {
               {navPages.map((p, i) => {
                 const hasData = pageHasData(p, dataSchedules)
                 const findingCount = findingCounts[i] || 0
+                const warning = warningCounts[i]
                 return (
                   <li>
                     <button
                       class={'r1-nav-item' + (i === activePage ? ' is-active' : '')
-                        + (hasData ? ' has-data' : '') + (p.notesFor ? ' is-notes' : '')}
+                        + (hasData ? ' has-data' : '') + (p.notesFor ? ' is-notes' : '')
+                        + (warning ? (warning.fatal ? ' has-fatal' : ' has-warning') : '')}
                       onClick={() => setActivePage(i)}
                       title={p.notesFor ? `Schedule ${p.notesFor} — explanatory notes` : p.sheet}
                     >
                       <span class="r1-nav-id">{p.notesFor ? `${p.notesFor} ✎` : navScheduleLabel(p)}</span>
                       <span class="r1-nav-name">{p.sheet}</span>
-                      {findingCount > 0 && <span class="r1-nav-finding-count">{findingCount}</span>}
+                      {warning
+                        ? <span class={'r1-nav-warning' + (warning.fatal ? ' is-fatal' : '')}
+                            title={`${warning.count} ${warning.fatal ? 'fatal/warning' : 'warning'} finding${warning.count === 1 ? '' : 's'}`
+                              + (findingCount > warning.count ? ` (${findingCount} findings in all)` : '')}>
+                            ⚠ {warning.count}</span>
+                        : findingCount > 0 && <span class="r1-nav-finding-count" title={`${findingCount} INFO finding${findingCount === 1 ? '' : 's'}`}>{findingCount}</span>}
                     </button>
                   </li>
                 )

@@ -24,6 +24,12 @@ includes:
 - stacked vertical side labels from Excel text rotation;
 - static template markers such as `N/A` and `XXXXXX`, including schedule `710`
   continuation rows.
+- schedule `230`'s two tables (Part I and Part II both letter their columns
+  (b)-(h)), each filled under its own ruler;
+- schedule `512`'s split Receivable / Payable amounts, shown in the printed (d)
+  and (e) cells as `12,337 (R)  8,484 (P)`;
+- a side-navigation marker (amber `⚠ n`, red with a FATAL) on each schedule that
+  carries a WARNING or FATAL finding, when the host supplies a findings sidecar.
 
 Column mapping uses reviewed printed-letter contracts in `formColumnContracts.js`,
 with generated `columnSpec.json` metadata and header tokens for remaining bands.

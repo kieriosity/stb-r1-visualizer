@@ -4,9 +4,17 @@
 import { analyzeColumns, indexData, isFillableMarker, resolvedKey, resolveValue, selectBestValues } from './formData.js'
 import { buildGridPanels, layoutRows } from './formGrid.js'
 import { injectAnswers, matchAnswers } from './narrativeAnswers.js'
+import { formatValue } from './util.js'
 
 const INTERNAL = new Set(['schedule_id', 'revision', 'line_no', 'source_line_no', 'block',
   'section_id', 'category_id', 'row_id', 'block_id', 'answer_type'])
+// A printed column some filings split in two (SOO's Schedule 512 types "Receivable" and
+// "Payable" under (d) and (e)): the form has one cell, which shows both halves the way
+// other carriers type them in one cell, "451,248 (R)  (3,877) (P)".
+const SPLIT_COLUMNS = {
+  dollar_amounts_of_transactions: [['dollar_amounts_of_transactions_receivable', 'R'], ['dollar_amounts_of_transactions_payable', 'P']],
+  amount_due_from_or_to_related_parties: [['amount_due_from_or_to_related_parties_receivable', 'R'], ['amount_due_from_or_to_related_parties_payable', 'P']],
+}
 const norm = (s) => String(s ?? '').replace(/\s+/g, '').toLowerCase()
 const present = (v) => v != null && v !== ''
 
@@ -142,6 +150,17 @@ export function prepareForm(page, schedule, id, specs, { baseline = false } = {}
           const pointer = pointerFor([...recordPath, descriptor[0]])
           consumed.add(pointer)
           return { ...cell, filedValue: record[descriptor[0]], fieldPointer: pointer, w: 1 }
+        }
+        const split = SPLIT_COLUMNS[map.get(cell.c)]
+        if (base && split && (!cell.t || isFillableMarker(cell.t)) && !present(resolveValue(values, map.get(cell.c)))) {
+          const halves = split.filter(([k]) => present(values[k]) && typeof values[k] !== 'object')
+          if (halves.length) {
+            for (const [k] of halves) consumed.add(pointerFor([...base, k]))
+            const shown = halves.every(([k]) => values[k] === 0) ? formatValue(0)
+              : halves.map(([k, label]) => `${formatValue(values[k])} (${label})`).join('  ')
+            return { ...cell, filedValue: shown,
+              fieldPointer: pointerFor([...base, halves[0][0]]) }
+          }
         }
         const key = resolvedKey(values, map.get(cell.c))
         const fill = key && (!cell.t || isFillableMarker(cell.t))

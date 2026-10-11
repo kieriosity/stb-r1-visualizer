@@ -31,6 +31,15 @@ const A = {
   '510': ['account_no','title','source','balance_close_of_year'],
   '512': ['name_of_co_or_related_party_with_percent','nature_of_relationship','description_of_transactions','dollar_amounts_of_transactions','amount_due_from_or_to_related_parties'],
 }
+// One page printing two tables that both letter their columns (b)-(h): each part
+// applies under the ruler whose header text names it. Schedule 230 (the 2015 form)
+// prints Part I, Capital Stock, above Part II, Summary of Capital Stock Changes.
+const PARTS = {
+  '230': [
+    [/par value|authorized|outstanding/i, ['par_value','shares_authorized','shares_issued','shares_in_treasury','shares_outstanding','book_value_outstanding','book_value_in_treasury']],
+    [/preferred stock|common stock|treasury stock|additional/i, ['preferred_stock_shares','preferred_stock_amount','common_stock_shares','common_stock_amount','treasury_stock_shares','treasury_stock_amount','additional_capital']],
+  ],
+}
 const EQUIPMENT_FIRST = ['units_in_service_of_resp_at_begin_of','new_units_purchased_or_built','new_units_leased_from_others','rebuilt_units_acquired_and_rebuilt_units','all_other_units_incl_reclass_and_second','units_retired_from_service_of_resp','owned_and_used','leased_from_others','total_in_service_of_respondent_col','agg_cap_of_units_reported_in_col','leased_to_others']
 // Freight-car panels in the latest blank form restart at (b), while canonical
 // historical keys retain the earlier edition's (m)..(y) suffixes.
@@ -44,6 +53,7 @@ export function contractForPanel(page, scheduleId) {
     if (letters.includes('y')) return consecutive('m', EQUIPMENT_FREIGHT)
     return consecutive('b', letters.includes('n') ? EQUIPMENT_FREIGHT : EQUIPMENT_FIRST)
   }
+  if (PARTS[id]) return PARTS[id].map(([header, fields]) => ({ header, letters: consecutive('b', fields) }))
   if (B[id]) return consecutive('b', B[id])
   if (A[id]) return consecutive('a', A[id])
   return null

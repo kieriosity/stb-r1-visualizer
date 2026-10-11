@@ -117,3 +117,15 @@ test('conflicting duplicate rows are kept in details instead of choosing an arbi
   assert.equal(cells(p).filter(c=>c.fieldPointer).length,0)
   assert.deepEqual(p.unplaced.map(l=>l.value),[10,20])
 })
+
+test('Schedule 512 shows a split Receivable / Payable column in its one printed cell', () => {
+  // SOO 2017 line 3: (d) 12,337 receivable and 8,484 payable; (e) 7,155 receivable only.
+  const schedule = {items: [{line_no: 3, fields: {name_of_co_or_related_party_with_percent: 'Canadian Pacific',
+    dollar_amounts_of_transactions_receivable: 12337, dollar_amounts_of_transactions_payable: 8484,
+    amount_due_from_or_to_related_parties_receivable: 7155}}]}
+  const plan = prepareForm(pageFor('512'), schedule, '512', specs)
+  const shown = cells(plan).filter((c) => c.fieldPointer).map((c) => c.filedValue)
+  assert.ok(shown.includes('12,337 (R)  8,484 (P)'), JSON.stringify(shown))
+  assert.ok(shown.includes('7,155 (R)'), JSON.stringify(shown))
+  assert.equal(plan.unplaced.filter((l) => /receivable|payable/.test(l.pointer)).length, 0)
+})
