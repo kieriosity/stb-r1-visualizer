@@ -31,6 +31,14 @@ export function schedulesForRow(ranges, excelRow) {
     .map((r) => r.schedule)
 }
 
+// The grid's widths are all in em, so its width scales with its font size. "Fit"
+// shrinks the 12px base font until every column fits the pane (never enlarging),
+// like the extracted form's fit; other zoom choices are multiples of it.
+export function sheetFitScale(gridWidth, fontPx, room) {
+  if (!(gridWidth > 0) || !(fontPx > 0) || !(room > 0)) return 1
+  return Math.min(1, Math.max(0.1, room / (gridWidth * 12 / fontPx)))
+}
+
 export function sheetUrl(base, page, binding) {
   return `${base}/sheet-${page}.json?binding=${encodeURIComponent(binding)}`
 }

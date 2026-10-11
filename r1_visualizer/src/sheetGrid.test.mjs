@@ -1,8 +1,18 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
-import { columnLetter, formatCell, isWorkbook, schedulesForRow, sheetUrl, sourceEntryLabel } from './sheetGrid.js'
+import { columnLetter, formatCell, isWorkbook, schedulesForRow, sheetFitScale, sheetUrl, sourceEntryLabel } from './sheetGrid.js'
 import { extractedPagesForSource, initialSourcePage, linkedExtractedPage } from './sourceReview.js'
+
+test('fit shrinks a wide sheet until every column fits the pane, and never enlarges', () => {
+  // BNSF 2017 sheet 210: 1,300px of columns at the 12px base font in an 850px pane.
+  assert.equal(sheetFitScale(1300, 12, 850), 850 / 1300)
+  // The measurement is taken at whatever font is showing; the scale is the same.
+  assert.equal(sheetFitScale(650, 6, 850), 850 / 1300)
+  assert.equal(sheetFitScale(400, 12, 850), 1)
+  assert.equal(sheetFitScale(100000, 12, 850), 0.1)
+  assert.equal(sheetFitScale(0, 12, 850), 1)
+})
 
 test('column letters follow Excel, including past Z', () => {
   assert.deepEqual([0, 1, 25, 26, 27, 51, 52, 701, 702].map(columnLetter),
