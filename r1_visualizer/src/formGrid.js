@@ -264,6 +264,9 @@ function hasInteriorVerticalBorders(byCol, nCols) {
 
 function wrappedTextRun(byCol, cell, nCols) {
   if (!cell.w || !cell.t || cell.ha === 'cc') return null
+  // A left rule on the next cell closes this one (cells inside a merge carry no
+  // left rule): Schedule 200's two-line titles must not cover the (b) amount cell.
+  if (byCol.get(cell.c + 1)?.bd?.includes('l')) return null
 
   const end = findRightFrameEdge(byCol, cell.c + 1, nCols)
 

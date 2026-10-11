@@ -176,6 +176,22 @@ test('wrapped instruction text spans adjacent blank cells to align like list tex
   assert.equal(cells[1].bd, 'r')
 })
 
+test('a wrapped title stops at the left rule of the amount cell beside it', () => {
+  // Schedule 200 line 16 (2026 form): the two-line title must leave (b) its own cell.
+  const row = {
+    cells: [
+      { c: 0, t: '16', ha: 'c', bd: 'blr' },
+      { c: 3, t: 'Investments and advances affiliated companies\n(Schs. 310 and 310A)', w: 1, bd: 'br' },
+      { c: 4, bd: 'blr' },
+      { c: 5, bd: 'br' },
+    ],
+  }
+
+  const cells = layoutRow(row, 6)
+
+  assert.deepEqual(cells.map((c) => [c.c, c.span]), [[0, 1], [1, 1], [2, 1], [3, 1], [4, 1], [5, 1]])
+})
+
 test('unwrapped numbered instruction text spans to the page border', () => {
   const row = {
     cells: [
