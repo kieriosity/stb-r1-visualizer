@@ -1,0 +1,33 @@
+{
+  "workbook": "R1-7-31-2026.xlsx",
+  "workbook_sha256": "4739c8e6d4216d599d5a067fed2865cc0f0375cc3bb91c21fe68bb4d11e73855",
+  "reference_pdf": "R1-7-31-2026.pdf",
+  "reference_pdf_sha256": "83bf11622bf48ab74f41e331643edbbf02fc940ed02b5659f8960caa02c49594",
+  "scope": "Reviewed physical page boundaries missing from the workbook's manual page breaks. Row numbers are original Excel rows; a break follows the named row. Content is already present and is neither inserted nor removed.",
+  "sheets": {
+    "210": {
+      "breaks_after_rows": [69, 126],
+      "pdf_pages": [21, 22, 23],
+      "printed_pages": [16, 17, 18],
+      "reason": "Separate the existing Notes and Remarks for Schedules 210 and 220 page."
+    },
+    "342": {
+      "breaks_after_rows": [70],
+      "pdf_pages": [41, 42],
+      "printed_pages": [36, 37],
+      "reason": "Separate the existing Notes and Remarks for Schedule 342 page."
+    },
+    "PTC 410": {
+      "breaks_after_rows": [45, 89, 136, 186, 235, 278],
+      "pdf_pages": [92, 93, 94, 95, 96, 97, 98],
+      "printed_pages": [87, 88, 89, 90, 91, 92, 93],
+      "reason": "Separate the three existing continuation grids formerly combined in one panel (printed 90-92)."
+    },
+    "PTC 700": {
+      "breaks_after_rows": [70],
+      "pdf_pages": [99, 100],
+      "printed_pages": [94, 95],
+      "reason": "Separate the existing Notes and Remarks page."
+    }
+  }
+}

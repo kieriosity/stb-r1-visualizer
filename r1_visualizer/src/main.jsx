@@ -24,6 +24,10 @@ if (typeof window !== 'undefined') {
       mountR1Viewer(node, {
         dataBase: node.getAttribute('data-base') || undefined,
         reviewFindingsBase: node.getAttribute('data-findings-base') || undefined,
+        lineageBase: node.getAttribute('data-lineage-base') || undefined,
+        ocrBase: node.getAttribute('data-ocr-base') || undefined,
+        sourceBase: node.getAttribute('data-source-base') || undefined,
+        issuesBase: node.getAttribute('data-issues-base') || undefined,
         carrier: node.getAttribute('data-carrier') || undefined,
         year: node.getAttribute('data-year') || undefined,
         version: node.getAttribute('data-version') || undefined,

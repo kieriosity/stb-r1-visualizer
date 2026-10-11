@@ -1,30 +1,48 @@
-import { useEffect, useMemo, useState } from 'preact/hooks'
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { createStaticSource } from './dataSource.js'
-import { resolveConfig } from './config.js'
+import { initialSubmission, resolveConfig } from './config.js'
 import { FormFacsimile, findingRowId } from './FormFacsimile.jsx'
 import { FilledPanel, NotesPanel } from './FilledPanel.jsx'
+import { ComparedNotes } from './ComparedNotes.jsx'
+import { FiledDetails } from './FiledDetails.jsx'
+import { includeFiledSchedules } from './filedDetails.js'
 import { pageWidthPx } from './formGrid.js'
 import { anchorFindings, findingLineNo } from './findingLocation.js'
 import { shouldRenderFacsimile } from './pageRender.js'
 import { navScheduleLabel, pageHasData, pageMatchesSchedule, primaryScheduleIdForPage, splitCombinedPages } from './pageSchedules.js'
-import { findingCountsByPage, findingsForPage, normalizeReviewFindings } from './reviewFindings.js'
+import { findingCountsByPage, findingsForPage, normalizeReviewFindings, warningCountsByPage } from './reviewFindings.js'
 import { pagesForVersion, resolveFormVersion } from './formVersion.js'
+import { asFiledDeviations, describeFiling, describeSchedule, ocrPageUrl, profileLabel } from './lineage.js'
 import formTemplate from './formTemplate.json'
+import { SourceComparison } from './SourceComparison.jsx'
+import { IssueReport } from './IssueReport.jsx'
+import { captureIssueContext } from './issueReport.js'
 
 export function App({ options = {} }) {
   const config = useMemo(() => resolveConfig(options), [options])
   const source = useMemo(
-    () => createStaticSource(config.dataBase, config.reviewFindingsBase),
-    [config.dataBase, config.reviewFindingsBase])
+    () => createStaticSource(config.dataBase, config.reviewFindingsBase, config.lineageBase),
+    [config.dataBase, config.reviewFindingsBase, config.lineageBase])
 
   const [template] = useState(formTemplate)
   const [subs, setSubs] = useState([])
   const [sel, setSel] = useState(null) // { carrier, year, version, file }
-  const [doc, setDoc] = useState(null)
+  const [loadedDoc, setLoadedDoc] = useState(null)
+  const [issueContext, setIssueContext] = useState(null)
+  const doc = loadedDoc && loadedDoc.file === sel?.file ? loadedDoc.data : null
   const [reviewFindings, setReviewFindings] = useState([])
+  const [lineage, setLineage] = useState(null)
   const [activePage, setActivePage] = useState(0)
+  const documentViewport = useRef(null)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [compareSource, setCompareSource] = useState(() => Boolean(config.sourceBase &&
+    typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('sourcePage')))
+
+  useEffect(() => {
+    documentViewport.current?.scrollTo(0, 0)
+    documentViewport.current?.querySelector('.r1-fac-wrap')?.scrollTo(0, 0)
+  }, [activePage, sel?.file])
 
   // Load manifest once.
   useEffect(() => {
@@ -32,12 +50,9 @@ export function App({ options = {} }) {
       .then((list) => {
         setSubs(list)
         if (list.length) {
-          const want = list.filter((s) =>
-            (!options.carrier || s.carrier === options.carrier) &&
-            (!options.year || s.year === Number(options.year)) &&
-            (!options.version || s.version === Number(options.version)))
-          const pick = (want.length ? want : list)[want.length ? want.length - 1 : list.length - 1]
+          const pick = initialSubmission(list, options)
           setSel(pick)
+          if (!pick) setError('No submission matches the requested carrier, year and version. Check the filing link.')
         }
       })
       .catch((e) => setError(`Could not load manifest: ${e.message}`))
@@ -57,13 +72,30 @@ export function App({ options = {} }) {
   // Load selected submission.
   useEffect(() => {
     if (!sel) return
+    let cancelled = false
     setLoading(true)
     setError(null)
-    source.loadSubmission(sel.file)
-      .then((d) => setDoc(d))
-      .catch((e) => setError(`Could not load ${sel.file}: ${e.message}`))
-      .finally(() => setLoading(false))
+    source.loadSubmissionSnapshot(sel.file)
+      .then((snapshot) => { if (!cancelled) setLoadedDoc({ file: sel.file, ...snapshot }) })
+      .catch((e) => { if (!cancelled) setError(`Could not load ${sel.file}: ${e.message}`) })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
   }, [sel, source])
+
+  // Load the submission's lineage (where each schedule came from) when the host
+  // provides it; absent lineage just hides the provenance panel.
+  useEffect(() => {
+    let cancelled = false
+    setLineage(null)
+    if (!sel || !config.lineageBase) {
+      setLineage(null)
+      return
+    }
+    source.loadLineage(sel)
+      .then((l) => { if (!cancelled) setLineage(l) })
+      .catch(() => { if (!cancelled) setLineage(null) })
+    return () => { cancelled = true }
+  }, [sel, source, config.lineageBase])
 
   const carriers = useMemo(() => [...new Set(subs.map((s) => s.carrier))].sort(), [subs])
   const years = useMemo(
@@ -87,9 +119,9 @@ export function App({ options = {} }) {
   // filing's form_version. Falls back to the latest revision before a doc loads.
   const formVersion = resolveFormVersion(doc, template)
   const pages = useMemo(
-    () => splitCombinedPages(pagesForVersion(template, formVersion)), [template, formVersion])
+    () => includeFiledSchedules(splitCombinedPages(pagesForVersion(template, formVersion)), doc?.schedules, doc?.legacy_schedules), [template, formVersion, doc])
   const dataSchedules = useMemo(
-    () => new Set(Object.keys(doc?.schedules || {})), [doc])
+    () => new Set([...Object.keys(doc?.schedules || {}), ...Object.keys(doc?.legacy_schedules || {})]), [doc])
 
   // Every schedule that filed explanatory notes gets its OWN side-nav tab + page:
   // a synthetic "Explanatory notes" page inserted right after that schedule's last
@@ -152,37 +184,83 @@ export function App({ options = {} }) {
   const findingCounts = useMemo(
     () => findingCountsByPage(navPages, reviewFindings, sel),
     [navPages, reviewFindings, sel])
+  const warningCounts = useMemo(
+    () => warningCountsByPage(navPages, reviewFindings, sel),
+    [navPages, reviewFindings, sel])
+
+  function renderComparedPage(p) {
+    const id = primaryScheduleIdForPage(p)
+    const findings = findingsForPage(reviewFindings, sel, p)
+    if (p.notesFor) return <NotesPanel id={p.notesFor} schedule={doc.schedules?.[p.notesFor]} />
+    return <><ComparedNotes page={p} id={id} schedule={doc.schedules?.[id]} />
+      <FilledPanel page={p} doc={doc} width={pageWidthPx(p)} />
+      {shouldRenderFacsimile(p) && <FormFacsimile page={p} schedule={doc.schedules?.[id]}
+        scheduleId={id} envelope={doc.envelope} panelIndex={p.comparisonPanel}
+        findingsByLine={anchorFindings(findings, id, doc).byLine} />}
+      <FiledDetails page={p} pages={navPages} doc={doc} /></>
+  }
+
+  function renderComparedFindings(p) {
+    return <DqSidePanel findings={findingsForPage(reviewFindings, sel, p)} scheduleId={p.schedule}
+      doc={doc} lineage={lineage} lineageScheduleId={primaryScheduleIdForPage(p)} ocrBase={config.ocrBase} />
+  }
+
+  const reportIssue = config.issuesBase && doc && loadedDoc.sha256
+    ? (p, comparison = null) => setIssueContext(captureIssueContext(sel, loadedDoc.sha256, p, formVersion, comparison))
+    : null
 
   return (
     <div class="r1-app">
-      <Picker {...{ carriers, years, versions, sel, pickSub }} />
+      <Picker {...{ carriers, years, versions, sel, pickSub }} lineage={lineage} />
+      {(config.sourceBase || config.issuesBase) && !compareSource && <div class="r1-source-action">
+        {config.sourceBase && <><button type="button" disabled={!doc || loading} onClick={() => setCompareSource(true)}>Compare source</button>
+          <span>{lineage?.source_profile === 'scanned_pdf_ocr' ? 'Original PDF pages'
+            : lineage?.source_profile ? 'Original workbook tabs' : 'Original filing'} beside the extracted form</span></>}
+        {config.issuesBase && <><button type="button" disabled={!reportIssue || loading}
+          title={!reportIssue ? 'Load a filing on localhost or HTTPS to report an issue.' : undefined}
+          onClick={() => reportIssue(page)}>Report issue</button>
+          <a href={`${config.issuesBase}/`} target="_blank" rel="noopener">View issue log</a></>}
+      </div>}
+      {issueContext && <IssueReport base={config.issuesBase} context={issueContext} close={() => setIssueContext(null)} />}
       {error && <div class="r1-error">{error}</div>}
       {!template && !error && <div class="r1-loading">Loading form…</div>}
-      {template && (
+      {compareSource && doc && <SourceComparison key={sel.file} base={config.sourceBase} sel={sel}
+        navPages={navPages} scheduleId={primaryScheduleId} renderPage={renderComparedPage}
+        renderFindings={renderComparedFindings} close={() => setCompareSource(false)}
+        issuesBase={config.issuesBase} reportIssue={reportIssue} />}
+      {compareSource && !doc && !error && <div class="r1-loading">Loading extraction…</div>}
+      {template && !compareSource && (
         <div class="r1-body">
           <nav class="r1-nav">
             <ul>
               {navPages.map((p, i) => {
                 const hasData = pageHasData(p, dataSchedules)
                 const findingCount = findingCounts[i] || 0
+                const warning = warningCounts[i]
                 return (
                   <li>
                     <button
                       class={'r1-nav-item' + (i === activePage ? ' is-active' : '')
-                        + (hasData ? ' has-data' : '') + (p.notesFor ? ' is-notes' : '')}
+                        + (hasData ? ' has-data' : '') + (p.notesFor ? ' is-notes' : '')
+                        + (warning ? (warning.fatal ? ' has-fatal' : ' has-warning') : '')}
                       onClick={() => setActivePage(i)}
                       title={p.notesFor ? `Schedule ${p.notesFor} — explanatory notes` : p.sheet}
                     >
                       <span class="r1-nav-id">{p.notesFor ? `${p.notesFor} ✎` : navScheduleLabel(p)}</span>
                       <span class="r1-nav-name">{p.sheet}</span>
-                      {findingCount > 0 && <span class="r1-nav-finding-count">{findingCount}</span>}
+                      {warning
+                        ? <span class={'r1-nav-warning' + (warning.fatal ? ' is-fatal' : '')}
+                            title={`${warning.count} ${warning.fatal ? 'fatal/warning' : 'warning'} finding${warning.count === 1 ? '' : 's'}`
+                              + (findingCount > warning.count ? ` (${findingCount} findings in all)` : '')}>
+                            ⚠ {warning.count}</span>
+                        : findingCount > 0 && <span class="r1-nav-finding-count" title={`${findingCount} INFO finding${findingCount === 1 ? '' : 's'}`}>{findingCount}</span>}
                     </button>
                   </li>
                 )
               })}
             </ul>
           </nav>
-          <main class="r1-main">
+          <main class="r1-main" ref={documentViewport}>
             {loading && <div class="r1-loading">Loading…</div>}
             <div class="r1-doc">
               {page?.notesFor ? (
@@ -199,6 +277,7 @@ export function App({ options = {} }) {
                       findingsByLine={anchored.byLine}
                     />
                   )}
+                  {page && doc && <FiledDetails page={page} pages={navPages} doc={doc} />}
                 </>
               )}
             </div>
@@ -206,6 +285,9 @@ export function App({ options = {} }) {
               findings={pageFindings}
               scheduleId={page?.schedule}
               doc={doc}
+              lineage={lineage}
+              lineageScheduleId={primaryScheduleId}
+              ocrBase={config.ocrBase}
             />
           </main>
         </div>
@@ -228,7 +310,83 @@ function flashRow(scheduleId, lineNo) {
 // Side panel of DQ findings for the active schedule. Findings that resolve to a
 // printed line are clickable and scroll the facsimile to (and flash) that row, so
 // the feedback tracks the part of the form that has the problem.
-function DqSidePanel({ findings, scheduleId, doc }) {
+// Where the active schedule came from and how sure the pipeline is (TTF-6):
+// source profile, sheet/page/member with an OCR page-text link for scans, the
+// routing evidence, the per-schedule confidence and the source capture rate.
+// The as-filed deviations come from the submission JSON itself (schema
+// common__as_filed), so they render even without a lineage sidecar.
+function AsFiledPanel({ schedule }) {
+  const items = useMemo(() => asFiledDeviations(schedule), [schedule])
+  if (!items.length) return null
+  return (
+    <details class="r1-prov r1-asfiled">
+      <summary>As filed ({items.length})</summary>
+      <p class="r1-prov-note">Where the JSON standardized a label, number or text, this is what the carrier printed.</p>
+      <table class="r1-asfiled-table">
+        <thead><tr><th>Where</th><th>Field</th><th>Printed</th><th>In JSON</th></tr></thead>
+        <tbody>
+          {items.map((it) => (
+            <tr><td>{it.where}</td><td>{it.field}</td><td>{it.printed}</td><td>{it.canonical}</td></tr>
+          ))}
+        </tbody>
+      </table>
+    </details>
+  )
+}
+
+function ProvenancePanel({ lineage, scheduleId, ocrBase }) {
+  if (!lineage) return null
+  const filing = describeFiling(lineage)
+  const sched = scheduleId ? describeSchedule(lineage, scheduleId) : null
+  const lowConfidence = sched?.confidence != null && sched.confidence < 0.8
+  return (
+    <details class="r1-prov" open>
+      <summary>Provenance</summary>
+      <dl class="r1-prov-list">
+        {filing.map(([k, v]) => (
+          <div class="r1-prov-row"><dt>{k}</dt><dd>{v}</dd></div>
+        ))}
+      </dl>
+      {scheduleId && !sched && (
+        <p class="r1-prov-note">Schedule {scheduleId}: not routed from the source
+          ({lineage.schedule_states?.[scheduleId] || 'no lineage recorded'}).</p>
+      )}
+      {sched && (
+        <div class="r1-prov-sched">
+          <h4>Schedule {scheduleId}</h4>
+          <dl class="r1-prov-list">
+            <div class="r1-prov-row"><dt>Read from</dt><dd>
+              {sched.sources.length ? sched.sources.map((src, i) => {
+                const url = ocrPageUrl(ocrBase, lineage, src.page)
+                return (
+                  <span class="r1-prov-src">{i > 0 ? ', ' : ''}
+                    {url ? <a href={url} target="_blank" rel="noopener" title="Open the OCR text of this page">{src.label}</a> : src.label}
+                  </span>
+                )
+              }) : <em class="r1-muted">not recorded</em>}
+            </dd></div>
+            {sched.routing && <div class="r1-prov-row"><dt>Identified by</dt><dd>{sched.routing}</dd></div>}
+            <div class="r1-prov-row"><dt>Confidence</dt>
+              <dd class={lowConfidence ? 'r1-prov-low' : ''}>{sched.confidenceLabel ?? '—'}</dd></div>
+            <div class="r1-prov-row"><dt>Source capture</dt>
+              <dd class={sched.tierAMissed ? 'r1-prov-low' : ''}>
+                {sched.captureLabel ?? '—'}
+                {sched.tierAMissed ? ` (${sched.tierAMissed} value${sched.tierAMissed === 1 ? '' : 's'} not captured: ${sched.tierAValues.slice(0, 6).join(', ')}${sched.tierAValues.length > 6 ? ', …' : ''})` : ''}
+              </dd></div>
+            <div class="r1-prov-row"><dt>Rows extracted</dt><dd>{sched.extractedRows}</dd></div>
+            {Object.keys(sched.transformations).length > 0 && (
+              <div class="r1-prov-row"><dt>Transformations</dt><dd>
+                {Object.entries(sched.transformations).map(([rule, n]) => `${rule} ×${n}`).join(', ')}
+              </dd></div>
+            )}
+          </dl>
+        </div>
+      )}
+    </details>
+  )
+}
+
+function DqSidePanel({ findings, scheduleId, doc, lineage, lineageScheduleId, ocrBase }) {
   const items = useMemo(() => {
     return (findings || [])
       .map((f) => ({ finding: f, lineNo: findingLineNo(f, doc) }))
@@ -247,6 +405,8 @@ function DqSidePanel({ findings, scheduleId, doc }) {
 
   return (
     <aside class="r1-dq" aria-label="Data-quality findings for this schedule">
+      <ProvenancePanel lineage={lineage} scheduleId={lineageScheduleId} ocrBase={ocrBase} />
+      <AsFiledPanel schedule={lineageScheduleId ? doc?.schedules?.[lineageScheduleId] : null} />
       <div class="r1-dq-head">
         <h3>Data quality</h3>
         {items.length ? (
@@ -280,6 +440,12 @@ function DqSidePanel({ findings, scheduleId, doc }) {
                 {finding.actual_value != null && finding.actual_value !== '' && (
                   <p class="r1-dq-meta"><b>Actual:</b> {String(finding.actual_value)}</p>
                 )}
+                {finding.expected_value != null && finding.expected_value !== '' && (
+                  <p class="r1-dq-meta"><b>Expected:</b> {String(finding.expected_value)}</p>
+                )}
+                {finding.expected_for_profile && (
+                  <p class="r1-dq-meta r1-dq-expected" title="A documented steady-state warning for this filing's source profile">Expected for this source profile</p>
+                )}
                 {finding.suggested_action && (
                   <p class="r1-dq-meta"><b>Fix:</b> {finding.suggested_action}</p>
                 )}
@@ -292,7 +458,7 @@ function DqSidePanel({ findings, scheduleId, doc }) {
   )
 }
 
-function Picker({ carriers, years, versions, sel, pickSub }) {
+function Picker({ carriers, years, versions, sel, pickSub, lineage }) {
   if (!sel) return <div class="r1-picker r1-picker-empty">No submissions found.</div>
   return (
     <div class="r1-picker">
@@ -314,6 +480,11 @@ function Picker({ carriers, years, versions, sel, pickSub }) {
           {versions.map((v) => <option value={v}>v{v}</option>)}
         </select>
       </label>
+      {lineage?.source_profile && (
+        <span class="r1-profile-badge" title={profileLabel(lineage.source_profile)}>
+          {lineage.source_profile}
+        </span>
+      )}
     </div>
   )
 }

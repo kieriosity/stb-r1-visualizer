@@ -5,6 +5,7 @@ import {
   findingCountsByPage,
   findingsForPage,
   normalizeReviewFindings,
+  warningCountsByPage,
 } from './reviewFindings.js'
 
 const raw = {
@@ -110,5 +111,20 @@ test('findings map to narrative schedules carried by combined template pages', (
   assert.deepEqual(findingCountsByPage(pages, findings, selected), {
     0: 1,
     1: 1,
+  })
+})
+
+test('warningCountsByPage marks only pages carrying a WARNING or FATAL finding', () => {
+  const findings = normalizeReviewFindings(raw)
+  const selected = { carrier: 'BNSF', year: 2025, version: 1 }
+  const pages = [
+    { sheet: 'Title' },
+    { sheet: '200', schedule: '200' },
+    { sheet: '410', schedule: '410' },
+  ]
+
+  // Page 200 has an INFO finding only; page 410 a WARNING and a FATAL.
+  assert.deepEqual(warningCountsByPage(pages, findings, selected), {
+    2: { count: 2, fatal: true },
   })
 })

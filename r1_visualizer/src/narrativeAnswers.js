@@ -61,8 +61,8 @@ export function injectAnswers(page, rowAnswers) {
     const cells = (row.cells || []).map((c) => ({ ...c }))
     let prompt = null
     for (const c of cells) if (c.t != null && String(c.t).trim()) prompt = c
-    if (prompt) prompt.t = `${prompt.t}    ${answer}`
-    else cells.push({ c: 1, t: answer })
+    if (prompt) { prompt.t = `${prompt.t}\n${answer}`; prompt.w = 1 }
+    else cells.push({ c: 1, t: answer, w: 1 })
     return { ...row, cells }
   })
   return { ...page, rows }

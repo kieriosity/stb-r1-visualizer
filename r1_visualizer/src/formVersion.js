@@ -18,10 +18,15 @@ export function pagesForVersion(template, formVersion) {
   const pages = template?.pages || []
   const variants = template?.variants || {}
   if (!formVersion) return pages
-  return pages.map((page) => {
-    const variant = page.schedule && variants[page.schedule]?.[formVersion]
-    if (!variant) return page
-    // Render the older form's grid under the current revision's nav label.
-    return { ...page, cols: variant.cols, rows: variant.rows, rowBreaks: variant.rowBreaks }
-  })
+  return pages
+    // A page tagged with form_versions belongs only to those revisions: hide a
+    // retired pre-2016 schedule (230, 339, ...) on a current-form filing, and a
+    // current-only schedule (210A) on a legacy filing. Untagged pages show always.
+    .filter((page) => !page.form_versions || page.form_versions.includes(formVersion))
+    .map((page) => {
+      const variant = page.schedule && variants[page.schedule]?.[formVersion]
+      if (!variant) return page
+      // Render the older form's grid under the current revision's nav label.
+      return { ...page, cols: variant.cols, rows: variant.rows, rowBreaks: variant.rowBreaks }
+    })
 }

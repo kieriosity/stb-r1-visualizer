@@ -9,12 +9,14 @@ Run:
 Writes r1_visualizer/src/formTemplate.json
 """
 import json, re, os, datetime
+import hashlib
 from pathlib import Path
 
 import openpyxl
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / 'r1_visualizer' / 'src' / 'formTemplate.json'
+BOUNDARIES = Path(__file__).with_name('form-page-boundaries.json')
 
 # The STB renumbered Schedule 200 (and revised 210, added 210A) between these
 # revisions, so the facsimile is generated per form version and the viewer renders
@@ -29,16 +31,73 @@ FORMS = [
 # Sheet name -> data schedule_id (None = front matter / instructions, shown
 # static). Keeps form order via the workbook's own sheet order.
 def sheet_to_schedule(name):
+    ids = sheet_schedules(name)
+    return ids[0] if ids else None
+
+
+def sheet_schedules(name):
+    """All schedule ids named in a sheet, in order. The legacy form stacks two
+    schedules on one sheet ('340 350', '342 351', '501 502'); each gets its own
+    page (split at its banner). Instruction/front-matter sheets return []."""
     n = name.strip()
     if re.search(r'inst', n, re.I):
-        return None
-    m = re.match(r'^(PTC)\s*([0-9]{3}[a-zA-Z]?)', n)
-    if m:
-        return f'PTC_{m.group(2).upper()}'
-    m = re.match(r'^([0-9]{3}[a-zA-Z]?)\b', n)
-    if m:
-        return m.group(1).upper()
-    return None
+        return []
+    ids = []
+    for m in re.finditer(r'(PTC)?\s*\b([0-9]{3}[a-zA-Z]?)\b', n):
+        sid = f'PTC_{m.group(2).upper()}' if m.group(1) else m.group(2).upper()
+        if sid not in ids:
+            ids.append(sid)
+    return ids
+
+
+def _banner_page_start(grid, idx):
+    """Keep an immediately preceding printed page header with its banner.
+
+    Some combined sheets break before Road Initials / Year / page number, one
+    row before the schedule title. Splitting at the title strands a one-row
+    panel on the preceding schedule. Never pull data or instructions across.
+    """
+    start = max((b for b in grid.get('rowBreaks', []) if 0 < b <= idx and idx - b <= 2), default=idx)
+    texts = [str(c['t']).strip() for row in grid['rows'][start:idx]
+             for c in row['cells'] if str(c.get('t', '')).strip()]
+    if texts and any(t.lower().startswith('road') for t in texts) and all(
+            t.lower().startswith(('road', 'year')) or t.isdigit() for t in texts):
+        return start
+    return idx
+
+
+def _split_combined(grid, ids):
+    """Split a combined sheet's grid into one page per schedule, sliced at each
+    schedule's '<id>.' banner row. Ids without a banner in the grid are dropped."""
+    rows = grid['rows']
+    found = []
+    for sid in ids:
+        pat = re.compile(rf'^\s*{re.escape(sid)}\.')
+        idx = next((i for i, row in enumerate(rows)
+                    if any(isinstance(c.get('t'), str) and pat.match(c['t']) for c in row['cells'])),
+                   None)
+        if idx is not None:
+            found.append((_banner_page_start(grid, idx), sid))
+    found.sort()
+    if len(found) <= 1:                    # nothing to split on; one page as-is
+        out = dict(grid)
+        out['schedule'] = found[0][1] if found else (ids[0] if ids else None)
+        return [out]
+    pages = []
+    for k, (idx, sid) in enumerate(found):
+        start = idx if k > 0 else 0         # first page keeps the leading page header
+        end = found[k + 1][0] if k + 1 < len(found) else len(rows)
+        sub = dict(grid)
+        sub['rows'] = rows[start:end]
+        sub['schedule'] = sid
+        if 'rowBreaks' in grid:
+            rb = [b - start for b in grid['rowBreaks'] if start < b < end]
+            if rb:
+                sub['rowBreaks'] = rb
+            else:
+                sub.pop('rowBreaks', None)
+        pages.append(sub)
+    return pages
 
 
 def ha_code(al):
@@ -77,7 +136,7 @@ def display_text(cell):
     return str(v)
 
 
-def extract_sheet(ws):
+def extract_sheet(ws, breaks_after_rows=None):
     maxc = ws.max_column
     # Trim trailing rows: keep through the last row carrying text.
     last = 0
@@ -137,11 +196,12 @@ def extract_sheet(ws):
             row_numbers.append(r)
 
     row_breaks = []
-    for brk in ws.row_breaks.brk:
+    break_rows = breaks_after_rows if breaks_after_rows is not None else [b.id for b in ws.row_breaks.brk]
+    for break_row in break_rows:
         # openpyxl break IDs are the last Excel row before a manual page break.
         # Store the corresponding zero-based row-array index where the next
         # printed page begins, so renderers do not need original Excel row IDs.
-        idx = next((i for i, row_num in enumerate(row_numbers) if row_num > brk.id), None)
+        idx = next((i for i, row_num in enumerate(row_numbers) if row_num > break_row), None)
         if idx is not None and 0 < idx < len(rows):
             row_breaks.append(idx)
 
@@ -151,18 +211,37 @@ def extract_sheet(ws):
     return grid
 
 
+def reviewed_boundaries(path):
+    review = json.loads(BOUNDARIES.read_text(encoding='utf-8'))
+    if path.name != review['workbook']:
+        return {}
+    for source, digest in [(path, review['workbook_sha256']),
+                           (path.with_name(review['reference_pdf']), review['reference_pdf_sha256'])]:
+        if hashlib.sha256(source.read_bytes()).hexdigest() != digest:
+            raise ValueError(f'Reviewed page-boundary source changed: {source.name}')
+    return review['sheets']
+
+
 def extract_form(path):
-    """sheet name -> grid dict (cols/rows/[rowBreaks]/sheet/schedule) for one form."""
+    """Ordered list of grid dicts (cols/rows/[rowBreaks]/sheet/schedule) for one
+    form, in workbook sheet order. A combined sheet expands to one grid per
+    schedule (split at each banner)."""
+    boundaries = reviewed_boundaries(path)
     wb = openpyxl.load_workbook(path, data_only=True)
-    sheets = {}
+    grids = []
     for name in wb.sheetnames:
-        grid = extract_sheet(wb[name])
+        reviewed = boundaries.get(name, {}).get('breaks_after_rows')
+        grid = extract_sheet(wb[name], reviewed)
         if grid is None:
             continue
         grid['sheet'] = name
-        grid['schedule'] = sheet_to_schedule(name)
-        sheets[name] = grid
-    return wb.sheetnames, sheets
+        ids = sheet_schedules(name)
+        if len(ids) > 1:
+            grids.extend(_split_combined(grid, ids))
+        else:
+            grid['schedule'] = ids[0] if ids else None
+            grids.append(grid)
+    return grids
 
 
 def _grid_body(grid):
@@ -172,30 +251,58 @@ def _grid_body(grid):
     return body
 
 
+def _sched_key(sid):
+    """Numeric sort key for a schedule id (e.g. '210A' -> (210, 'A')); non-numeric
+    ids sort last."""
+    m = re.match(r'(\d+)([A-Za-z]?)', sid or '')
+    return (int(m.group(1)), m.group(2)) if m else (10 ** 9, sid or '')
+
+
 def main():
     versions = [v for v, _ in FORMS]
     latest = versions[-1]                 # the current revision drives the page list / nav
     per_version = {}                      # version -> {schedule_id: grid}
     base_pages = None
     for v, path in FORMS:
-        names, sheets = extract_form(path)
-        ordered = [sheets[n] for n in names if n in sheets]
+        ordered = extract_form(path)
         per_version[v] = {g['schedule']: g for g in ordered if g['schedule']}
         if v == latest:
             base_pages = ordered           # full page set (incl. instruction pages)
 
-    # The NAV/page list always comes from the current revision (clean sheet names,
-    # separate instruction pages). For schedules the older form drew differently we
-    # keep its grid as a variant; the viewer swaps it in when a filing is on that
-    # revision, so old filings still match their own printed form.
+    # Tag every page with the form versions whose workbook actually carries that
+    # schedule, so the viewer shows a page only for filings on a matching revision
+    # (front-matter pages carry no schedule and appear on every version).
+    sched_versions = {}
+    for v in versions:
+        for sched in per_version[v]:
+            sched_versions.setdefault(sched, []).append(v)
+    for page in base_pages:
+        page['form_versions'] = sched_versions.get(page.get('schedule'), list(versions))
+
+    # The NAV/page list comes from the current revision. For schedules the older form
+    # drew differently we keep its grid as a variant the viewer swaps in for that
+    # revision. Schedules the current form DROPPED (retired pre-2016 schedules: 230,
+    # 339, 416, 460, 721-726, ...) have no current page, so add their older-form page
+    # directly - tagged with the versions that carry it - inserted in schedule order
+    # so the nav stays in form order for legacy filings.
     variants = {}                          # schedule -> {older_version: grid body}
+    legacy_only = {}                       # schedule -> grid (first older form that has it)
     for v in versions[:-1]:
         for sched, grid in per_version[v].items():
             base = per_version[latest].get(sched)
             if base is None:
-                continue                   # legacy schedule dropped from the current form
-            if (grid['cols'], grid['rows']) != (base['cols'], base['rows']):
+                legacy_only.setdefault(sched, grid)
+                continue
+            if _grid_body(grid) != _grid_body(base):
                 variants.setdefault(sched, {})[v] = _grid_body(grid)
+
+    for sched in sorted(legacy_only, key=_sched_key):
+        grid = legacy_only[sched]
+        grid['form_versions'] = sched_versions.get(sched, [])
+        key = _sched_key(sched)
+        at = next((i for i, p in enumerate(base_pages)
+                   if p.get('schedule') and _sched_key(p['schedule']) > key), len(base_pages))
+        base_pages.insert(at, grid)
 
     out = {'form_versions': versions, 'default_version': latest,
            'pages': base_pages, 'variants': variants}
@@ -203,7 +310,8 @@ def main():
     with open(OUT, 'w', encoding='utf-8') as fh:
         json.dump(out, fh, ensure_ascii=False, separators=(',', ':'))
     size = os.path.getsize(OUT)
-    print(f'wrote {OUT}  ({size/1024:.0f} KB, {len(base_pages)} pages from {latest}, '
+    print(f'wrote {OUT}  ({size/1024:.0f} KB, {len(base_pages)} pages, '
+          f'{len(legacy_only)} legacy-only pages added, '
           f'{len(variants)} schedules with older-form variants)')
     for sched in ('200', '210', '210A'):
         vs = list(variants.get(sched, {}))

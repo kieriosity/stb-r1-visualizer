@@ -1,3 +1,4 @@
+import { contractForPanel } from './formColumnContracts.js'
 const FALLBACK_VALUE_KEYS = ['values', 'cells', 'fields', 'measures']
 
 // Non-data content a value cell may carry on the blank form: a "not
@@ -16,6 +17,10 @@ export const tokens = (value) => String(value || '')
   .toLowerCase().split(/[^a-z0-9]+/).filter((token) => token && token.length > 1 && !STOP.has(token))
 
 export function resolveValue(values, keyPath) {
+  if (Array.isArray(keyPath)) {
+    const key = resolvedKey(values, keyPath)
+    return key ? resolveValue(values, key) : undefined
+  }
   if (!values || !keyPath) return undefined
   if (Object.prototype.hasOwnProperty.call(values, keyPath)) return values[keyPath]
 
@@ -26,6 +31,10 @@ export function resolveValue(values, keyPath) {
     current = current[part]
   }
   return current
+}
+
+export function resolvedKey(values, keys) {
+  return Array.isArray(keys) ? keys.find((key) => hasResolvedValue(values, key)) : keys
 }
 
 export function hasResolvedValue(values, keyPath) {
@@ -52,21 +61,32 @@ export function scheduleRecords(schedule) {
 }
 
 export function indexData(schedule, scheduleId, specs = {}) {
-  const empty = { byAccount: new Map(), byLine: new Map() }
+  const empty = { byAccount: new Map(), byLine: new Map(), byBlockLine: new Map(), blocks: [] }
   if (!schedule) return empty
   const spec = specs[scheduleId] || {}
   const valueKey = spec.valueKey || 'values'
   const byAccount = new Map()
   const byLine = new Map()
+  // For schedules that paginate across facing pages that restart line numbering
+  // (e.g. 310): records carry `block` (0-based page-pair) + `source_line_no` (the
+  // printed per-page line). byBlockLine lets the facsimile place each record back on
+  // its own page instead of keying everything to one global, flattened line number.
+  const byBlockLine = new Map()
+  const blockSet = new Set()
 
   for (const record of scheduleRecords(schedule)) {
     const values = recordValues(record, valueKey)
     if (record.line_no != null) appendMapValue(byLine, String(record.line_no), values)
+    if (record.block != null) {
+      blockSet.add(record.block)
+      const sln = record.source_line_no != null ? record.source_line_no : record.line_no
+      if (sln != null) appendMapValue(byBlockLine, `${record.block}:${sln}`, values)
+    }
     const accounts = record.cross_check_accounts || []
     if (accounts.length) appendMapValue(byAccount, norm(accounts.join(',')), values)
   }
 
-  return { byAccount, byLine }
+  return { byAccount, byLine, byBlockLine, blocks: [...blockSet].sort((a, b) => a - b) }
 }
 
 export function selectBestValues(candidates, keyPaths) {
@@ -90,7 +110,7 @@ export function selectBestValues(candidates, keyPaths) {
 // matching the column's header text against the columnSpec key names. This is
 // robust to schedules that stack several sub-tables with different columns on
 // one sheet (e.g. 450), where a single positional rule would misplace values.
-export function analyzeColumns(page, scheduleId, specs = {}) {
+export function analyzeColumns(page, scheduleId, specs = {}, { reviewed = true } = {}) {
   const spec = specs[scheduleId] || {}
   const dataCols = spec.columns || []
 
@@ -176,9 +196,17 @@ export function analyzeColumns(page, scheduleId, specs = {}) {
       if (headerAcc) { activeMap = mapBand(headerAcc); headerAcc = null }
       rowMaps[ri] = activeMap
     } else {
+      // A numbered instruction paragraph that a continued page prints above the table
+      // ("11. ...give names and extent of control...") is NOT a column header, but its
+      // body lands in a value column and would mis-map it (Schedule 310 page 27's
+      // "extent of control" capturing the Opening Balance column). Column headers and
+      // category subheaders are never numbered, so skipping numbered rows excludes the
+      // prose while keeping a real header band that sits above a blank row and a
+      // subheader (Schedule 200) - which a blank-row reset would have discarded.
+      const firstText = row.cells.map((c) => c.t).find((t) => t && String(t).trim())
+      const isInstruction = firstText && /^\s*\d+\.(\s|$)/.test(String(firstText))
       const isHeaderCell = (c) => c.t && candidate.has(c.c) && !MARKER.test(c.t.trim())
-      const hasHeaderText = row.cells.some(isHeaderCell)
-      if (hasHeaderText) {
+      if (!isInstruction && row.cells.some(isHeaderCell)) {
         if (!headerAcc) headerAcc = new Map()
         for (const c of row.cells) {
           if (isHeaderCell(c)) {
@@ -191,6 +219,39 @@ export function analyzeColumns(page, scheduleId, specs = {}) {
       rowMaps[ri] = activeMap
     }
   })
+  const contract = reviewed && contractForPanel(page, scheduleId)
+  if (contract) {
+    // A contract with parts (Schedule 230) picks the part whose header text the rows
+    // just above the ruler print; a plain contract applies under every ruler.
+    const forRuler = (ri) => {
+      if (!Array.isArray(contract)) return contract
+      const above = page.rows.slice(Math.max(0, ri - 3), ri + 1).flatMap((r) => r.cells.map((c) => c.t || '')).join(' ')
+      return (contract.find((part) => part.header.test(above)) || contract[0]).letters
+    }
+    // Under a ruler, line numbers rise; one that restarts with no new ruler is a numbered
+    // instruction list printed below the table (Schedule 230's Part II instructions 1-6
+    // below Part I's lines 1-10), not table lines, so it takes no values.
+    let ruled = null
+    let lastLine = 0
+    page.rows.forEach((row, ri) => {
+      const letters = row.cells.map((c) => [c.c, String(c.t || '').trim().match(/^\(([a-z])\)$/)?.[1]])
+        .filter(([, letter]) => letter)
+      if (letters.length >= 2) {
+        const map = forRuler(ri)
+        ruled = new Map(letters.filter(([, letter]) => map[letter]).map(([col, letter]) => [col, map[letter]]))
+        lastLine = 0
+      }
+      if (ruled && isDataRow(row)) {
+        const line = Number(row.cells.find((c) => c.c === lineCol)?.t)
+        if (line > lastLine) {
+          rowMaps[ri] = ruled
+          lastLine = line
+        } else {
+          rowMaps[ri] = new Map()
+        }
+      }
+    })
+  }
   return { rowMaps, accountCol, lineCol }
 }
 

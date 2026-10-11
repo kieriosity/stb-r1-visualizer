@@ -24,10 +24,34 @@ includes:
 - stacked vertical side labels from Excel text rotation;
 - static template markers such as `N/A` and `XXXXXX`, including schedule `710`
   continuation rows.
+- schedule `230`'s two tables (Part I and Part II both letter their columns
+  (b)-(h)), each filled under its own ruler;
+- schedule `512`'s split Receivable / Payable amounts, shown in the printed (d)
+  and (e) cells as `12,337 (R)  8,484 (P)`;
+- a side-navigation marker (amber `⚠ n`, red with a FATAL) on each schedule that
+  carries a WARNING or FATAL finding, when the host supplies a findings sidecar.
 
-Column mapping is driven by generated `columnSpec.json` metadata plus header
-tokens from the extracted template. Nested JSON paths use dotted keys, for
-example `owned_and_used.depreciation_base_beginning_of_year`.
+Column mapping uses reviewed printed-letter contracts in `formColumnContracts.js`,
+with generated `columnSpec.json` metadata and header tokens for remaining bands.
+Nested JSON paths use dotted keys, for example
+`owned_and_used.depreciation_base_beginning_of_year`.
+
+Schedule A's omission list and Schedule C's holder table have explicit mappings;
+narrative answers wrap. **Additional filed data** below each schedule preserves
+populated fields that could not be placed on the form, including zeroes, notes,
+overflow and conflicting records. It covers the whole schedule in either view.
+Schedules absent from the template and retained legacy tables remain reachable
+through separately labeled navigation entries.
+
+The 2026-09-14 pipeline audit checked 301 versions / 61 canonical schedules plus
+retained Schedule 250. All populated schedule fields were accessible; this does
+not certify extraction accuracy or exact printed-cell placement. The current
+Excel-derived template now has 113 panels matching the July 2026 PDF's page
+boundaries. Missing workbook page breaks had combined existing notes and PTC
+continuation grids; no source content needed to be recreated. Combined-sheet
+headers now stay with their own schedules. Unplaced data remains available below
+the form. See the pipeline's
+`docs/visualizer-display-audit-2026-09.md` for the evidence and per-schedule results.
 
 ## Run locally
 
@@ -47,6 +71,49 @@ Deep-link to a schedule with `?sched=<id>`, for example:
 http://localhost:5173/?sched=710
 ```
 
+## Source page comparison
+
+When the host supplies `data-source-base`, **Compare source pages** opens the
+original PDF beside the extracted form. The source endpoint is provided by the
+pipeline's steward and standalone servers. Previous/Next and a page selector
+navigate physical PDF pages. **Page together** is enabled by default: the
+extraction advances through the associated schedule's printed pages with the PDF.
+Each pane still has independent zoom and scrolling.
+The right selector lists form pages associated with the source page's schedules.
+Pairing starts from page order within the schedule. A manual selection becomes
+the starting point for subsequent paired navigation; turn off **Page together**
+to retain manual selection within that schedule. If the source and form have
+different page counts, navigation stops at the first/last extracted page without
+wrapping. The separate explanatory-notes view remains manually selectable.
+On questionnaire pages, filed note blocks whose opening question text matches
+the selected form panel now appear above the blank reference form. Other notes
+remain available under **All filed explanatory notes**; continuation pages with
+no text match show all schedule notes with an explicit scope label. This is a
+text association, not a verified PDF-page coordinate. Schedule lineage does
+not prove page correspondence or identify exact rows or image regions. An unmapped
+source page clears the extraction pane. Amendments and OCR correction pages are
+explicitly labeled.
+
+Append `sourcePage=124` to a filing URL to open comparison at that PDF page.
+Source requests include the filing version and bind image requests to the
+manifest's output/log/source identity. An unavailable or changed source shows a
+message; the app does not substitute another filing or OCR text. Static and
+WordPress hosts without the source endpoint keep the ordinary form view.
+
+## Issue reports
+
+Hosts that provide `data-issues-base` enable **Report issue** in both form and
+source-comparison views, plus **View issue log**. The report dialog captures the
+filing/version, displayed output SHA-256, selected schedules and extracted panel,
+and (in comparison mode) the physical PDF page and source binding. Select an issue
+type and describe the observed/expected behavior. The backend saves a separate
+JSON report with source/run identity; failures retain the draft and retries reuse
+the same issue ID. Saving does not change extracted data or review approval state.
+Use localhost or HTTPS for reporting; without Web Crypto the viewer still renders
+but cannot bind a report to the loaded output. Static hosts without an issue
+endpoint omit these controls. See the pipeline's `docs/transformation-issues/README.md`
+for storage, context limits, and triage.
+
 ## Verify changes
 
 ```bash
@@ -59,6 +126,20 @@ The build emits `dist/r1-viewer.js` and `dist/r1-viewer.css`. A large bundle
 warning is currently expected because the form template JSON is bundled with
 the app.
 
+To audit populated schedule fields against the same presentation planner and
+additional-data records used by the components, run from this repository root:
+
+```bash
+node scripts/audit-display.mjs /path/to/08_reporting display-audit.json
+```
+
+The report pins the template and input hashes and counts form/panel coverage,
+additional data, and inaccessible fields per schedule. It exits nonzero for
+unreachable schedules or inaccessible fields. `--baseline` measures the former
+mapping without additional-data coverage; it is a conservative gap estimate,
+not a count of incorrect financial cells. The 100 frontend tests include actual
+component output as well as mapping and source-navigation checks.
+
 ## Regenerate the form template
 
 When the official workbook changes, regenerate the extracted template:
@@ -70,6 +151,15 @@ python scripts/gen-form-template.py
 This updates `r1_visualizer/src/formTemplate.json`. The extractor preserves
 cell borders, widths, fonts, spans, text rotation, and Excel display text used
 by the visualizer.
+
+`scripts/form-page-boundaries.json` records PDF-reviewed corrections to missing
+manual workbook page breaks and pins both source hashes. A changed source
+requires another review before those coordinates can be reused. Run the offline
+generator regressions with `python -m unittest discover -s scripts -p test_form_template.py`.
+Regeneration is byte-identical on the pinned inputs. A headless Chromium check
+also covers the real steward UI: paired pages, zoom, scrolling, supplemental data,
+and exact filing selection. Lowercase carrier links work; an unavailable filing
+shows an error instead of silently selecting another filing.
 
 ## WordPress deployment
 

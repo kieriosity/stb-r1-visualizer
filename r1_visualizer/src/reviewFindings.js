@@ -27,7 +27,10 @@ export function normalizeReviewFindings(payload) {
       message: text(finding.message),
       suggested_action: text(finding.suggested_action),
       actual_value: text(finding.actual_value),
+      expected_value: text(finding.expected_value),
       is_new: Boolean(finding.is_new),
+      inherited: Boolean(finding.inherited),
+      expected_for_profile: Boolean(finding.expected_for_profile),
     }))
 }
 
@@ -59,6 +62,17 @@ export function findingCountsByPage(pages, findings, selected) {
   for (const [index, page] of (pages || []).entries()) {
     const count = findingsForPage(findings, selected, page).length
     if (count) counts[index] = count
+  }
+  return counts
+}
+
+// The side nav marks a schedule page that carries a WARNING or FATAL finding (not
+// only INFO): { [page index]: { count, fatal } }.
+export function warningCountsByPage(pages, findings, selected) {
+  const counts = {}
+  for (const [index, page] of (pages || []).entries()) {
+    const flagged = findingsForPage(findings, selected, page).filter((f) => f.severity === 'WARNING' || f.severity === 'FATAL')
+    if (flagged.length) counts[index] = { count: flagged.length, fatal: flagged.some((f) => f.severity === 'FATAL') }
   }
   return counts
 }
