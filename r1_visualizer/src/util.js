@@ -13,7 +13,9 @@ export function prettifyKey(key) {
     .join(' ')
 }
 
-const NUM_FMT = new Intl.NumberFormat('en-US')
+// Every decimal as stored, never rounded: the default keeps three places, which
+// showed Schedule 332's composite rate 0.0105 as 0.011.
+const NUM_FMT = new Intl.NumberFormat('en-US', { maximumFractionDigits: 20 })
 
 // Numbers in R-1 are integers in thousands; render with separators, blanks
 // for null/empty, and a parenthesised style for negatives (accounting form).
