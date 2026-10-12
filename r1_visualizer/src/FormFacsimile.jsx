@@ -43,13 +43,14 @@ export function FormFacsimile({ page, schedule, scheduleId, envelope, findingsBy
                 const lineNo = rowLineNo(panel.rows[ri].cells, panel.lineCol)
                 const rowFindings = lineNo != null && findingsByLine ? findingsByLine.get(lineNo) : null
                 const sev = rowFindings ? topSeverity(rowFindings) : null
+                const added = panel.rows[ri].carrierLine
                 return (
                   <tr
                     id={sev ? findingRowId(scheduleId, lineNo) : undefined}
-                    class={sev ? `r1-fac-flag is-${sev.toLowerCase()}` : undefined}
+                    class={[sev && `r1-fac-flag is-${sev.toLowerCase()}`, added != null && 'r1-fac-carrier-line'].filter(Boolean).join(' ') || undefined}
                     title={sev
                       ? rowFindings.map((f) => `${f.severity} ${f.rule_id}: ${f.message || ''}`).join('\n')
-                      : undefined}
+                      : added != null ? `Line added by the carrier; the printed form ends at line ${added}.` : undefined}
                   >
                     {rowCells.map((cell) => {
                       let text = cell.t || ''

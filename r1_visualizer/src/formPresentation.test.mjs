@@ -129,3 +129,34 @@ test('Schedule 512 shows a split Receivable / Payable column in its one printed 
   assert.ok(shown.includes('7,155 (R)'), JSON.stringify(shown))
   assert.equal(plan.unplaced.filter((l) => /receivable|payable/.test(l.pointer)).length, 0)
 })
+
+test('lines a carrier adds past the form get rows on its last page (BNSF 2019 Schedule 310A)', () => {
+  const item = (line_no, name, balance) => ({ line_no, fields: { name_of_issuing_company_and_description: name,
+    balance_at_beginning_of_year: balance } })
+  const schedule = { items: [item(1, 'Alameda Belt Line', 0), item(27, 'TOTAL NON-CARRIERS', 32811),
+    item(29, 'TOTAL INVESTMENTS IN COMMON STOCK', 748310)] }
+  const before = JSON.stringify(pages)
+  const extended = includeFiledSchedules(pages, { '310A': schedule })
+  assert.equal(JSON.stringify(pages), before, 'the template pages are not changed')
+  const page = extended.find((p) => pageMatchesSchedule(p, '310A'))
+  const added = page.rows.filter((r) => r.carrierLine != null)
+  assert.deepEqual(added.map((r) => r.cells.find((c) => c.c === 0).t), ['28', '29'])
+  assert.ok(added.every((r) => r.carrierLine === 27))
+  const shown = cells(prepareForm(page, schedule, '310A', specs)).filter((c) => c.fieldPointer)
+  assert.equal(shown.find((c) => c.fieldPointer === '/items/2/fields/balance_at_beginning_of_year')?.filedValue, 748310)
+  assert.equal(shown.find((c) => c.fieldPointer === '/items/2/fields/name_of_issuing_company_and_description')?.filedValue,
+    'TOTAL INVESTMENTS IN COMMON STOCK')
+  // Lines within the form, and a paginated list's own pages, add nothing.
+  const within = includeFiledSchedules(pages, { '310A': { items: [item(27, 'TOTAL', 1)] } })
+  assert.equal(within.find((p) => pageMatchesSchedule(p, '310A')), pageFor('310A'))
+  const blocks = includeFiledSchedules(pages, { '310A': { items: [{ ...item(29, 'X', 1), block: 1 }] } })
+  assert.equal(blocks.find((p) => pageMatchesSchedule(p, '310A')), pageFor('310A'))
+  // The model is the last plain line: Schedule 352A's last printed line is its
+  // right-aligned TOTAL, which an added company line must not copy.
+  const page352 = includeFiledSchedules(pages, { '352A': { items: [item(32, 'Tacoma Rail', 1)] } })
+    .find((p) => pageMatchesSchedule(p, '352A'))
+  const row352 = page352.rows.find((r) => r.carrierLine != null)
+  const plain = pageFor('352A').rows.find((r) => r.cells.some((c) => String(c.t ?? '').trim() === '30'))
+  assert.deepEqual(row352.cells.map((c) => c.ha), plain.cells.map((c) => c.ha))
+  assert.ok(!row352.cells.some((c) => /total/i.test(c.t ?? '')))
+})
