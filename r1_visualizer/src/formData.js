@@ -8,7 +8,8 @@ export const MARKER = /^(n\/?a|na|x+|\(\s*\)|[-*–—.\s]+)$/i
 const FILLABLE_MARKER = /^(\(\s*\)|[-*–—.\s]+)$/i
 
 export function isFillableMarker(value) {
-  return FILLABLE_MARKER.test(String(value || '').trim())
+  const text = String(value || '').trim()
+  return !text || FILLABLE_MARKER.test(text)    // a lone space is a blank cell
 }
 
 const STOP = new Set(['of', 'at', 'for', 'the', 'and', 'to', 'in', 'a', 'on', 'or', 'col', 'cols', 'see'])
@@ -154,7 +155,9 @@ export function analyzeColumns(page, scheduleId, specs = {}, { reviewed = true }
   for (const row of page.rows) {
     if (!isDataRow(row)) continue
     for (const c of row.cells) {
-      if (c.t) {
+      // A cell holding only a space is blank (the 2015 form's Schedule 726 line 1
+      // (b) crossties cell), not descriptor text that disqualifies its column.
+      if (c.t && c.t.trim()) {
         if (!MARKER.test(c.t.trim())) textInData.add(c.c)
       } else if (c.bd && c.c !== lineCol) {
         fillable.add(c.c)

@@ -18,6 +18,29 @@ const SPLIT_COLUMNS = {
 const norm = (s) => String(s ?? '').replace(/\s+/g, '').toLowerCase()
 const present = (v) => v != null && v !== ''
 
+// The form may draw one value column as a box over several sheet cells (Schedule
+// 750's (b) spans three); the figure sits in the first. It takes the blank, unruled
+// cells after it, so a long number uses the whole box instead of wrapping in one cell.
+function widenValueCells(cells) {
+  const out = []
+  for (const cell of cells) {
+    const prev = out.at(-1)
+    if (prev && (prev.fieldPointer || prev.valueColumn) && !prev.bd?.includes('r')
+        && !String(cell.t ?? '').trim() && !cell.fieldPointer && !cell.valueColumn
+        && !cell.bd?.includes('l') && cell.c === prev.c + (prev.span || 1)) {
+      out[out.length - 1] = { ...prev, span: (prev.span || 1) + (cell.span || 1), bd: joinBorders(prev.bd, cell.bd) }
+      continue
+    }
+    out.push(cell)
+  }
+  return out
+}
+
+function joinBorders(left = '', right = '') {
+  return (left.includes('t') || right.includes('t') ? 't' : '') + (left.includes('b') || right.includes('b') ? 'b' : '')
+    + (left.includes('l') ? 'l' : '') + (right.includes('r') ? 'r' : '')
+}
+
 export function filedLeaves(value, path = [], out = []) {
   if (Array.isArray(value)) value.forEach((v, i) => filedLeaves(v, [...path, i], out))
   else if (value && typeof value === 'object') {
@@ -144,7 +167,7 @@ export function prepareForm(page, schedule, id, specs, { baseline = false } = {}
             && c.c !== panel.cols.length - 1)) consumed.add(pointerFor([...recordPath, key]))
         }
       }
-      return cells.map((cell) => {
+      return widenValueCells(cells.map((cell) => {
         if (cell.fieldPointer) { consumed.add(cell.fieldPointer); return cell }
         if (!baseline && record && descriptor && cell.c === descriptorCol && !cell.t && present(record[descriptor[0]])) {
           const pointer = pointerFor([...recordPath, descriptor[0]])
@@ -172,7 +195,7 @@ export function prepareForm(page, schedule, id, specs, { baseline = false } = {}
           return { ...cell, filedValue: value, fieldPointer: pointer }
         }
         return { ...cell, valueColumn: Boolean(fill) }
-      })
+      }))
     })
     return panel
   })

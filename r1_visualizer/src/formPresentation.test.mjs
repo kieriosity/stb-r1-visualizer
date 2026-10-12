@@ -160,3 +160,17 @@ test('lines a carrier adds past the form get rows on its last page (BNSF 2019 Sc
   assert.deepEqual(row352.cells.map((c) => c.ha), plain.cells.map((c) => c.ha))
   assert.ok(!row352.cells.some((c) => /total/i.test(c.t ?? '')))
 })
+
+test('a figure fills its whole printed box; a space-only form cell does not hide its column (UP 2014, 2015 form)', () => {
+  const pages2015 = splitCombinedPages(pagesForVersion(template, '2015-08-31'))
+  const page = (id) => pages2015.find((p) => pageMatchesSchedule(p, id))
+  // 750 (b) is one box over three sheet cells: the figure spans it instead of wrapping.
+  const fuel = cells(prepareForm(page('750'), { rows: [{ line_no: 1, title: 'Freight', cells: { diesel_oil: 1021942292 } }] }, '750', specs))
+    .find((c) => c.fieldPointer === '/rows/0/cells/diesel_oil')
+  assert.equal(fuel.filedValue, 1021942292)
+  assert.equal(fuel.span, 3)
+  // 726 line 1's (b) crossties cell holds a single space on the form.
+  const ties = cells(prepareForm(page('726'), { rows: [{ line_no: 1, title: 'A', cells: { ties_crossties_number_replaced: 2716879,
+    ties_switch_and_bridge_board_feet: 3916293 } }] }, '726', specs)).filter((c) => c.fieldPointer).map((c) => c.filedValue)
+  assert.deepEqual(ties, [2716879, 3916293])
+})
